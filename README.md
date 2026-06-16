@@ -40,6 +40,8 @@ npx skills add superturboryan/app-store-connect-skills
 npx codex-marketplace add superturboryan/app-store-connect-skills --plugins
 ```
 
+The skills.sh repository page is grouped by the root `skills.sh.json` file.
+
 ## Skills
 
 ### `asc-marketing-manager`

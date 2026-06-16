@@ -1,0 +1,14 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "App Store Connect",
+      "description": "Skills for App Store Connect metadata, screenshots, App Review details, and regional pricing audits.",
+      "skills": [
+        "asc-marketing-manager",
+        "asc-pricing-manager"
+      ]
+    }
+  ]
+}
