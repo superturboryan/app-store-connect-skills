@@ -3,8 +3,8 @@
 ## Project
 
 `app-store-connect-skills` is a Codex marketplace source for App Store Connect skills. It currently
-ships the `asc-marketing-manager` plugin and skills for safely syncing localized marketing metadata,
-screenshot assets, and read-only pricing audits.
+ships the `asc-marketing-manager` and `asc-pricing-manager` plugins for safely syncing localized
+marketing metadata, screenshot assets, and read-only pricing audits.
 
 Current local path:
 
@@ -61,6 +61,22 @@ app-store-connect-skills/
             asc-audit-pricing.mjs
           tests/
             asc-audit-pricing.test.mjs
+    asc-pricing-manager/
+      .codex-plugin/
+        plugin.json
+      assets/
+        icon.svg
+      commands/
+        asc-pricing-manager.md
+      skills/
+        asc-pricing-manager/
+          SKILL.md
+          lib/
+            asc-sync-core.mjs
+          scripts/
+            asc-audit-pricing.mjs
+          tests/
+            asc-audit-pricing.test.mjs
 ```
 
 ## Current Status
@@ -73,9 +89,10 @@ Verification command:
 ```zsh
 cd /Users/ryan/Developer/Xcode/app-store-connect-skills
 node --test plugins/asc-marketing-manager/skills/asc-marketing-manager/tests/*.test.mjs plugins/asc-marketing-manager/skills/asc-pricing-manager/tests/*.test.mjs
+node --test plugins/asc-pricing-manager/skills/asc-pricing-manager/tests/*.test.mjs
 ```
 
-Last known result: 44 tests passed.
+Last known result: 49 tests passed across both commands.
 
 ## Purpose
 
@@ -204,7 +221,7 @@ after the user explicitly asks.
 Pricing audit:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
+node plugins/asc-pricing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
   --env ~/.appstoreconnect/my-app-pricing.env \
   --out /private/tmp/asc-pricing-audit.json \
   --csv /private/tmp/asc-pricing-audit.csv
@@ -314,7 +331,7 @@ polls asset delivery state until processing succeeds or fails.
 
 ## Publishing Direction
 
-This repo is now a GitHub marketplace source for a single skills-only Codex plugin.
+This repo is now a GitHub marketplace source for App Store Connect Codex plugins.
 
 Install path:
 
@@ -324,7 +341,7 @@ codex plugin marketplace add superturboryan/app-store-connect-skills
 
 The `0.1.0` release remains a beta/pre-release and should be retagged to the latest plugin-ready commit after validation.
 
-Current skills in this collection:
+Current plugins in this collection:
 
 - `asc-marketing-manager`
 - `asc-pricing-manager`

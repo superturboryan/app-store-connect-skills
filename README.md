@@ -23,9 +23,9 @@ Add this repository as a Codex marketplace source:
 codex plugin marketplace add superturboryan/app-store-connect-skills
 ```
 
-Then install or browse **ASC Marketing Manager** from that marketplace. The installed plugin keeps
-that name for compatibility, while this repository is the broader App Store Connect skills
-collection.
+Then install or browse **ASC Marketing Manager** and **ASC Pricing Manager** from that marketplace.
+The marketing plugin keeps its original name for compatibility, while this repository is the
+broader App Store Connect skills collection.
 
 Start a workflow in a new Codex thread with one of the bundled commands:
 
@@ -72,6 +72,9 @@ Use this skill for paid-app pricing review:
 - JSON and CSV audit artifacts written to `/private/tmp` by default
 
 The pricing workflow is read-only in this release. It does not schedule or apply price changes.
+
+It is also available as a standalone Codex plugin named **ASC Pricing Manager** for users who want
+pricing audits to appear as a separate tool in the composer.
 
 ## Scope
 
@@ -178,7 +181,7 @@ Replace `--dry-run` with `--apply` only after reviewing a clean dry run.
 Pricing audit:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
+node plugins/asc-pricing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
   --env ~/.appstoreconnect/my-app-pricing.env
 ```
 
@@ -273,6 +276,7 @@ Run the dependency-free test suite with Node's built-in test runner:
 
 ```zsh
 node --test plugins/asc-marketing-manager/skills/asc-marketing-manager/tests/*.test.mjs plugins/asc-marketing-manager/skills/asc-pricing-manager/tests/*.test.mjs
+node --test plugins/asc-pricing-manager/skills/asc-pricing-manager/tests/*.test.mjs
 ```
 
 Tests do not call App Store Connect and do not require real credentials.
