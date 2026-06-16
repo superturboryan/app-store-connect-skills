@@ -1,0 +1,49 @@
+{
+  "data": [
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "loc-en-us",
+      "attributes": {
+        "locale": "en-US",
+        "promotionalText": "SoundCloud on your watch. Phone-free listening. Stream likes and playlists.",
+        "whatsNew": "+ Updated for watchOS 26.5\n+ Bug fixes and stability improvements"
+      }
+    },
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "loc-en-gb",
+      "attributes": {
+        "locale": "en-GB",
+        "promotionalText": "Old English UK text",
+        "whatsNew": "Old English UK release notes"
+      }
+    },
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "loc-es-es",
+      "attributes": {
+        "locale": "es-ES",
+        "promotionalText": "Old Spanish text",
+        "whatsNew": "Old Spanish release notes"
+      }
+    },
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "loc-es-mx",
+      "attributes": {
+        "locale": "es-MX",
+        "promotionalText": "Old Spanish MX text",
+        "whatsNew": "Old Spanish MX release notes"
+      }
+    },
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "loc-ja",
+      "attributes": {
+        "locale": "ja",
+        "promotionalText": "手首のウォッチからSoundCloudを直接ストリーミング。",
+        "whatsNew": "+ watchOS 26.5に対応\n+ バグ修正"
+      }
+    }
+  ]
+}

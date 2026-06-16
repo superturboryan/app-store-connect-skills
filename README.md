@@ -7,9 +7,9 @@
 ![Node.js 18+](https://img.shields.io/badge/node-18%2B-339933)
 ![App Store Connect](https://img.shields.io/badge/App%20Store%20Connect-metadata%20%2B%20screenshots%20%2B%20pricing-0A84FF)
 
-App Store Connect Skills is a Codex marketplace source for App Store Connect workflows. It bundles
-readable, review-first skills for metadata, App Review details, localized screenshot assets, and
-regional pricing audits.
+App Store Connect Skills is a Codex marketplace source and skills.sh-compatible skill collection
+for App Store Connect workflows. It bundles readable, review-first skills for metadata, App Review
+details, localized screenshot assets, and regional pricing audits.
 
 It is built around a simple release-manager rule: compare first, apply only after review. The
 bundled scripts are dependency-free Node programs that read local desired-state files, talk directly
@@ -43,6 +43,9 @@ npx codex-marketplace add superturboryan/app-store-connect-skills --plugins
 
 The skills.sh repository page is grouped by the root `skills.sh.json` file and should list both
 bundled skills under the App Store Connect collection.
+
+For skills.sh discovery, the same skill packages are mirrored at `skills/asc-marketing-manager` and
+`skills/asc-pricing-manager`. The Codex marketplace plugins remain under `plugins/`.
 
 ## Skills
 

@@ -4,7 +4,9 @@
 
 `app-store-connect-skills` is a Codex marketplace source for App Store Connect skills. It currently
 ships the `asc-marketing-manager` and `asc-pricing-manager` plugins for safely syncing localized
-marketing metadata, screenshot assets, and read-only pricing audits.
+marketing metadata, screenshot assets, and read-only pricing audits. It also exposes top-level
+`skills/` packages so skills.sh and the `skills` CLI can discover the same workflows without
+needing to crawl Codex plugin internals.
 
 Current local path:
 
@@ -17,6 +19,20 @@ app-store-connect-skills/
   README.md
   AGENTS.md
   LICENSE
+  skills.sh.json
+  skills/
+    asc-marketing-manager/
+      SKILL.md
+      lib/
+      scripts/
+      tests/
+      references/
+      assets/
+    asc-pricing-manager/
+      SKILL.md
+      lib/
+      scripts/
+      tests/
   .agents/
     plugins/
       marketplace.json
@@ -90,9 +106,10 @@ Verification command:
 cd /Users/ryan/Developer/Xcode/app-store-connect-skills
 node --test plugins/asc-marketing-manager/skills/asc-marketing-manager/tests/*.test.mjs plugins/asc-marketing-manager/skills/asc-pricing-manager/tests/*.test.mjs
 node --test plugins/asc-pricing-manager/skills/asc-pricing-manager/tests/*.test.mjs
+node --test skills/asc-marketing-manager/tests/*.test.mjs skills/asc-pricing-manager/tests/*.test.mjs
 ```
 
-Last known result: 49 tests passed across both commands.
+Last known result: 49 marketplace plugin tests passed, plus 44 mirrored root-skill tests.
 
 ## Purpose
 

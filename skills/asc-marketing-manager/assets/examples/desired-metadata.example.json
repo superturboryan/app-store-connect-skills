@@ -1,0 +1,57 @@
+{
+  "appInfo": {
+    "locales": {
+      "en-US": {
+        "name": "Example App",
+        "subtitle": "Music on your watch"
+      },
+      "es-ES": {
+        "name": "Example App",
+        "subtitle": "Musica en tu reloj"
+      }
+    },
+    "fallbacks": {
+      "en-GB": "en-US",
+      "es-MX": "es-ES"
+    }
+  },
+  "version": {
+    "versionString": "2.3.0",
+    "platform": "IOS",
+    "copyright": "2026 Your Name",
+    "releaseType": "MANUAL",
+    "usesIdfa": false,
+    "locales": {
+      "en-US": {
+        "promotionalText": "Music on your watch. Phone-free listening.",
+        "description": "Example App helps listeners manage audio from their watch.",
+        "keywords": "music,watch,audio,streaming",
+        "supportUrl": "https://example.com/support",
+        "marketingUrl": "https://example.com",
+        "whatsNew": "+ Updated for the latest OS\n+ Bug fixes and stability improvements"
+      },
+      "es-ES": {
+        "promotionalText": "Musica en tu reloj. Escucha sin telefono.",
+        "description": "Example App ayuda a gestionar audio desde tu reloj.",
+        "keywords": "musica,reloj,audio,streaming",
+        "supportUrl": "https://example.com/support",
+        "marketingUrl": "https://example.com",
+        "whatsNew": "+ Actualizada para el ultimo sistema operativo\n+ Correccion de errores y mejoras de estabilidad"
+      }
+    },
+    "fallbacks": {
+      "en-GB": "en-US",
+      "es-MX": "es-ES"
+    }
+  },
+  "review": {
+    "contactFirstName": "Ada",
+    "contactLastName": "Lovelace",
+    "contactPhone": "+15555550123",
+    "contactEmail": "ada@example.com",
+    "demoAccountRequired": true,
+    "demoAccountName": "demo@example.com",
+    "demoAccountPassword": "replace-with-transient-secret",
+    "notes": "Use the demo account to sign in and verify the main playback workflow."
+  }
+}

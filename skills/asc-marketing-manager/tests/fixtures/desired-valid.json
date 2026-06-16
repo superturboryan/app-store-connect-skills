@@ -1,0 +1,20 @@
+{
+  "locales": {
+    "en-US": {
+      "promotionalText": "SoundCloud on your watch. Phone-free listening. Stream likes and playlists.",
+      "whatsNew": "+ Updated for watchOS 26.5\n+ Bug fixes and stability improvements"
+    },
+    "es-ES": {
+      "promotionalText": "SoundCloud en tu reloj. Escucha sin teléfono.",
+      "whatsNew": "+ Actualizado para watchOS 26.5\n+ Corrección de errores"
+    },
+    "ja": {
+      "promotionalText": "手首のウォッチからSoundCloudを直接ストリーミング。",
+      "whatsNew": "+ watchOS 26.5に対応\n+ バグ修正"
+    }
+  },
+  "fallbacks": {
+    "en-GB": "en-US",
+    "es-MX": "es-ES"
+  }
+}
