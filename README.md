@@ -3,7 +3,7 @@
 # App Store Connect Skills
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![skills.sh](https://skills.sh/b/superturboryan/app-store-connect-skills)](https://skills.sh/superturboryan/app-store-connect-skills/asc-marketing-manager)
+[![skills.sh](https://img.shields.io/badge/skills.sh-App%20Store%20Connect%20Skills-000000)](https://www.skills.sh/superturboryan/app-store-connect-skills)
 ![Node.js 18+](https://img.shields.io/badge/node-18%2B-339933)
 ![App Store Connect](https://img.shields.io/badge/App%20Store%20Connect-metadata%20%2B%20screenshots%20%2B%20pricing-0A84FF)
 
@@ -27,10 +27,11 @@ Then install or browse **ASC Marketing Manager** from that marketplace. The inst
 that name for compatibility, while this repository is the broader App Store Connect skills
 collection.
 
-Start a workflow in a new Codex thread with:
+Start a workflow in a new Codex thread with one of the bundled commands:
 
 ```text
 /asc-marketing-manager
+/asc-pricing-manager
 ```
 
 Other supported install paths:
@@ -40,7 +41,8 @@ npx skills add superturboryan/app-store-connect-skills
 npx codex-marketplace add superturboryan/app-store-connect-skills --plugins
 ```
 
-The skills.sh repository page is grouped by the root `skills.sh.json` file.
+The skills.sh repository page is grouped by the root `skills.sh.json` file and should list both
+bundled skills under the App Store Connect collection.
 
 ## Skills
 

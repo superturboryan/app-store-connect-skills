@@ -1,6 +1,6 @@
 {
   "name": "asc-marketing-manager",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260616085849",
   "description": "API-aware workflows for dry-running and syncing localized App Store Connect metadata, screenshots, and pricing audits.",
   "author": {
     "name": "SuperTurboRyan",
