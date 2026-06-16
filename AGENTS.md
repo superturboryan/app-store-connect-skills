@@ -1,17 +1,19 @@
-# ASC Marketing Manager Handoff
+# App Store Connect Skills Handoff
 
 ## Project
 
-`asc-marketing-manager` is a Codex marketplace plugin for safely syncing localized App Store Connect marketing metadata and screenshot assets.
+`app-store-connect-skills` is a Codex marketplace source for App Store Connect skills. It currently
+ships the `asc-marketing-manager` plugin and skills for safely syncing localized marketing metadata,
+screenshot assets, and read-only pricing audits.
 
 Current local path:
 
-`/Users/ryan/Developer/Xcode/asc-marketing-manager`
+`/Users/ryan/Developer/Xcode/app-store-connect-skills`
 
 Marketplace plugin layout:
 
 ```text
-asc-marketing-manager/
+app-store-connect-skills/
   README.md
   AGENTS.md
   LICENSE
@@ -53,20 +55,27 @@ asc-marketing-manager/
               desired-metadata.example.json
               localization-sheet-template.csv
               pages-sheet-template.csv
+        asc-pricing-manager/
+          SKILL.md
+          scripts/
+            asc-audit-pricing.mjs
+          tests/
+            asc-audit-pricing.test.mjs
 ```
 
 ## Current Status
 
-The text metadata expansion package and screenshot asset upload package have been implemented and tested.
+The text metadata expansion package, screenshot asset upload package, and read-only pricing audit
+package have been implemented and tested.
 
 Verification command:
 
 ```zsh
-cd /Users/ryan/Developer/Xcode/asc-marketing-manager
-node --test plugins/asc-marketing-manager/skills/asc-marketing-manager/tests/*.test.mjs
+cd /Users/ryan/Developer/Xcode/app-store-connect-skills
+node --test plugins/asc-marketing-manager/skills/asc-marketing-manager/tests/*.test.mjs plugins/asc-marketing-manager/skills/asc-pricing-manager/tests/*.test.mjs
 ```
 
-Last known result: 39 tests passed.
+Last known result: 44 tests passed.
 
 ## Purpose
 
@@ -83,9 +92,11 @@ The skill helps agents sync App Store Connect text metadata and screenshot asset
 - App Review contact, demo account, and notes text fields
 - explicit creation of a missing editable App Store version with `--ensure-version`
 - localized screenshot upload/replacement from nested folders with numeric filename ordering
+- read-only regional paid-app pricing audits with JSON/CSV output
 
 Future scope:
 
+- scheduled price changes
 - app previews
 - build selection
 - review attachments
@@ -190,6 +201,19 @@ node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync
 Screenshot apply replaces each targeted ASC screenshot set. Always run dry-run first. Only apply
 after the user explicitly asks.
 
+Pricing audit:
+
+```zsh
+node plugins/asc-marketing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
+  --env ~/.appstoreconnect/my-app-pricing.env \
+  --out /private/tmp/asc-pricing-audit.json \
+  --csv /private/tmp/asc-pricing-audit.csv
+```
+
+Pricing audit mode is read-only. It fetches the current app price schedule, manual prices,
+automatic prices, included territories, and app price points, then writes reviewable JSON and CSV
+artifacts. It must not schedule or apply price changes.
+
 ## Credential Rules
 
 Never commit or print full credentials.
@@ -220,7 +244,9 @@ chmod 600 ~/.appstoreconnect/*.env
 chmod 600 ~/.appstoreconnect/*.p8
 ```
 
-Least privilege ASC key role: `Marketing`.
+Least privilege ASC key role for metadata and screenshots: `Marketing`. Use a separate
+pricing-capable key/env file for pricing audits; do not assume the Marketing key can read pricing
+resources.
 
 ## Desired JSON Shape
 
@@ -293,17 +319,12 @@ This repo is now a GitHub marketplace source for a single skills-only Codex plug
 Install path:
 
 ```zsh
-codex plugin marketplace add superturboryan/asc-marketing-manager
+codex plugin marketplace add superturboryan/app-store-connect-skills
 ```
 
 The `0.1.0` release remains a beta/pre-release and should be retagged to the latest plugin-ready commit after validation.
 
-Possible future plugin/collection name:
-
-`app-store-release-tools`
-
-Possible skills in that future collection:
+Current skills in this collection:
 
 - `asc-marketing-manager`
-- `testflight-manager`
-- `app-review-submission`
+- `asc-pricing-manager`

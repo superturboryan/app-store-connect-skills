@@ -1,13 +1,13 @@
 {
   "name": "asc-marketing-manager",
   "version": "0.1.0",
-  "description": "API-aware workflows for dry-running and syncing localized App Store Connect text metadata and screenshots.",
+  "description": "API-aware workflows for dry-running and syncing localized App Store Connect metadata, screenshots, and pricing audits.",
   "author": {
     "name": "SuperTurboRyan",
     "url": "https://github.com/superturboryan"
   },
-  "homepage": "https://github.com/superturboryan/asc-marketing-manager",
-  "repository": "https://github.com/superturboryan/asc-marketing-manager",
+  "homepage": "https://github.com/superturboryan/app-store-connect-skills",
+  "repository": "https://github.com/superturboryan/app-store-connect-skills",
   "license": "MIT",
   "keywords": [
     "codex-skill",
@@ -19,13 +19,16 @@
     "screenshots",
     "assets",
     "app-review",
-    "release-notes"
+    "release-notes",
+    "pricing",
+    "price-schedule",
+    "regional-pricing"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "ASC Marketing Manager",
-    "shortDescription": "Dry-run and sync localized App Store Connect metadata and screenshots with API-aware safety.",
-    "longDescription": "ASC Marketing Manager gives Codex focused knowledge of the App Store Connect API for localized text metadata and screenshot assets. It turns Google Sheets or desired-state JSON into a validated dry run, can create a missing editable app version when requested, and applies only explicitly reviewed changes for names, subtitles, descriptions, keywords, URLs, What's New, promotional text, App Review fields, and localized screenshot sets.",
+    "shortDescription": "Dry-run and sync App Store metadata, screenshots, and pricing audits with API-aware safety.",
+    "longDescription": "ASC Marketing Manager gives Codex focused knowledge of the App Store Connect API for localized text metadata, screenshot assets, and read-only pricing audits. It turns Google Sheets or desired-state JSON into a validated dry run, can create a missing editable app version when requested, applies only explicitly reviewed changes for names, subtitles, descriptions, keywords, URLs, What's New, promotional text, App Review fields, and localized screenshot sets, and can audit regional paid-app pricing schedules without applying price changes.",
     "developerName": "SuperTurboRyan",
     "category": "Productivity",
     "capabilities": [
@@ -33,13 +36,15 @@
       "Localization sheet sync",
       "Screenshot asset upload",
       "Dry-run review",
-      "Editable version setup"
+      "Editable version setup",
+      "Regional pricing audit"
     ],
-    "websiteURL": "https://github.com/superturboryan/asc-marketing-manager",
+    "websiteURL": "https://github.com/superturboryan/app-store-connect-skills",
     "defaultPrompt": [
       "Compare my localization sheet with App Store Connect before release.",
       "Create a dry run for version 2.3 using my App Store copy sheet.",
-      "Dry-run replacing my localized screenshot sets from this asset folder."
+      "Dry-run replacing my localized screenshot sets from this asset folder.",
+      "Audit my current regional App Store pricing schedule."
     ],
     "brandColor": "#0A84FF",
     "composerIcon": "./assets/icon.svg",

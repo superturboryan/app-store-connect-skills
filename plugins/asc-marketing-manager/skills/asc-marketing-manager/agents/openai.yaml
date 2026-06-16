@@ -1,4 +1,4 @@
 interface:
-  display_name: "ASC-Marketing-Manager"
-  short_description: "Sync App Store Connect metadata safely"
-  default_prompt: "Use $asc-marketing-manager to dry-run localized App Store Connect metadata."
+  display_name: "ASC Marketing Manager"
+  short_description: "Dry-run and sync App Store metadata, App Review fields, and screenshots safely"
+  default_prompt: "Use $asc-marketing-manager to dry-run localized App Store Connect metadata and screenshots."
