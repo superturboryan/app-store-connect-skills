@@ -9,7 +9,7 @@ but are intentionally out of scope for this command.
 Dry run:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --assets ./AppStoreScreenshots \
   --version 2.3.0 \
@@ -19,7 +19,7 @@ node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync
 Apply after a clean dry run:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --assets ./AppStoreScreenshots \
   --version 2.3.0 \

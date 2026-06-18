@@ -641,8 +641,8 @@ export async function runAssetSync({
 
 export function printAssetHelp(logger = console) {
   logger.log(`Usage:
-  node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-assets.mjs --env <path> --assets <dir> --version <version> [--folder-shape auto|locale-first|display-first] --dry-run
-  node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-assets.mjs --env <path> --assets <dir> --version <version> [--folder-shape auto|locale-first|display-first] --apply`);
+  node skills/asc-marketing-manager/scripts/asc-sync-assets.mjs --env <path> --assets <dir> --version <version> [--folder-shape auto|locale-first|display-first] --dry-run
+  node skills/asc-marketing-manager/scripts/asc-sync-assets.mjs --env <path> --assets <dir> --version <version> [--folder-shape auto|locale-first|display-first] --apply`);
 }
 
 function validateAndSortTargetFiles(target) {

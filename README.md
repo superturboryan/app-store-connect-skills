@@ -1,5 +1,3 @@
-<img src="plugins/asc-marketing-manager/assets/icon.svg" alt="App Store Connect Skills icon" width="88" align="right">
-
 # App Store Connect Skills
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -7,45 +5,33 @@
 ![Node.js 18+](https://img.shields.io/badge/node-18%2B-339933)
 ![App Store Connect](https://img.shields.io/badge/App%20Store%20Connect-metadata%20%2B%20screenshots%20%2B%20pricing-0A84FF)
 
-App Store Connect Skills is a Codex marketplace source and skills.sh-compatible skill collection
-for App Store Connect workflows. It bundles readable, review-first skills for metadata, App Review
-details, localized screenshot assets, and regional pricing audits.
+App Store Connect Skills is a `skills.sh` collection for App Store Connect workflows. It bundles
+review-first skills for localized metadata, App Review details, screenshot assets, and read-only
+regional pricing audits.
 
-It is built around a simple release-manager rule: compare first, apply only after review. The
-bundled scripts are dependency-free Node programs that read local desired-state files, talk directly
-to App Store Connect, and keep Google Sheets access on the Codex connector side.
+The included scripts are dependency-free Node programs that read local desired-state files, talk
+directly to App Store Connect, and keep Google Sheets access on the agent connector side.
 
 ## Install
 
-Add this repository as a Codex marketplace source:
-
-```zsh
-codex plugin marketplace add superturboryan/app-store-connect-skills
-```
-
-Then install or browse **ASC Marketing Manager** and **ASC Pricing Manager** from that marketplace.
-The marketing plugin keeps its original name for compatibility, while this repository is the
-broader App Store Connect skills collection.
-
-Start a workflow in a new Codex thread with one of the bundled commands:
-
-```text
-/asc-marketing-manager
-/asc-pricing-manager
-```
-
-Other supported install paths:
+Install the collection with `skills.sh`:
 
 ```zsh
 npx skills add superturboryan/app-store-connect-skills
-npx codex-marketplace add superturboryan/app-store-connect-skills --plugins
 ```
 
-The skills.sh repository page is grouped by the root `skills.sh.json` file and should list both
-bundled skills under the App Store Connect collection.
+The skills.sh collection page is grouped by [skills.sh.json](/Users/ryan/Developer/Xcode/app-store-connect-skills/skills.sh.json) and should list both bundled skills.
 
-For skills.sh discovery, the same skill packages are mirrored at `skills/asc-marketing-manager` and
-`skills/asc-pricing-manager`. The Codex marketplace plugins remain under `plugins/`.
+## Use In Codex And Claude
+
+This repository ships skills only. It does not provide Codex plugin packaging or plugin slash
+commands.
+
+- Codex: invoke the installed skills with `/skills` or by mentioning `$asc-marketing-manager` or `$asc-pricing-manager`
+- Claude: install the skill folders as custom skills, then invoke them by name or let them auto-trigger
+
+For local development in this repository, `.agents/skills/*` symlinks point at the canonical root
+skill folders so Codex can discover them directly from the repo.
 
 ## Skills
 
@@ -76,9 +62,6 @@ Use this skill for paid-app pricing review:
 
 The pricing workflow is read-only in this release. It does not schedule or apply price changes.
 
-It is also available as a standalone Codex plugin named **ASC Pricing Manager** for users who want
-pricing audits to appear as a separate tool in the composer.
-
 ## Scope
 
 App previews, build selection, review attachments, submission, phased release, routing coverage, and
@@ -102,14 +85,14 @@ Pricing audit workflow:
 3. Review the generated JSON and CSV artifacts from `/private/tmp`.
 4. Design any future regional pricing matrix separately from the audit.
 
-The skill writes transient generated JSON to `/private/tmp` and avoids committing unreleased copy or
+The skills write transient generated JSON to `/private/tmp` and avoid committing unreleased copy or
 credentials.
 
 ## Google Sheets
 
-When `ASC_SHEET_ID` points to a spreadsheet, Codex reads it through the Google Sheets connector and
-uses the bundled mapper to produce desired JSON. If a sheet is missing, the skill can create a blank
-native Google Sheet, then stop until the user fills and reviews the copy.
+When `ASC_SHEET_ID` points to a spreadsheet, the skill reads it through the Google Sheets connector
+and uses the bundled mapper to produce desired JSON. If a sheet is missing, the skill can create a
+blank native Google Sheet, then stop until the user fills and reviews the copy.
 
 The default sheet layout is:
 
@@ -120,10 +103,7 @@ The default sheet layout is:
 - optional `supportUrl` and `marketingUrl` columns after `Keywords`
 - `Reviewer Notes` below the localization table
 
-Templates live in
-`plugins/asc-marketing-manager/skills/asc-marketing-manager/assets/examples/`. Full sheet creation
-and extraction rules are in
-`plugins/asc-marketing-manager/skills/asc-marketing-manager/references/google-sheet-localizations.md`.
+Templates live in [skills/asc-marketing-manager/assets/examples](/Users/ryan/Developer/Xcode/app-store-connect-skills/skills/asc-marketing-manager/assets/examples). Full sheet creation and extraction rules are in [skills/asc-marketing-manager/references/google-sheet-localizations.md](/Users/ryan/Developer/Xcode/app-store-connect-skills/skills/asc-marketing-manager/references/google-sheet-localizations.md).
 
 ## Screenshot Assets
 
@@ -142,16 +122,15 @@ AppStoreScreenshots/
       02-search.png
 ```
 
-Apply mode replaces each targeted ASC screenshot set with the matching local files. Folder rules are
-documented in
-`plugins/asc-marketing-manager/skills/asc-marketing-manager/references/asset-folder-screenshots.md`.
+Apply mode replaces each targeted ASC screenshot set with the matching local files. Folder rules
+are documented in [skills/asc-marketing-manager/references/asset-folder-screenshots.md](/Users/ryan/Developer/Xcode/app-store-connect-skills/skills/asc-marketing-manager/references/asset-folder-screenshots.md).
 
 ## Commands
 
 Metadata dry run:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --desired /private/tmp/asc-desired-metadata.json \
   --version 2.3.0 \
@@ -161,7 +140,7 @@ node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync
 Create a missing editable version during the dry run:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --desired /private/tmp/asc-desired-metadata.json \
   --version 2.3.0 \
@@ -172,7 +151,7 @@ node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync
 Screenshot dry run:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --assets ./AppStoreScreenshots \
   --version 2.3.0 \
@@ -184,7 +163,7 @@ Replace `--dry-run` with `--apply` only after reviewing a clean dry run.
 Pricing audit:
 
 ```zsh
-node plugins/asc-pricing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
+node skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
   --env ~/.appstoreconnect/my-app-pricing.env
 ```
 
@@ -253,39 +232,26 @@ attributes, and App Review details:
         "whatsNew": "+ Release note one\n+ Release note two"
       }
     }
+  },
+  "review": {
+    "contactFirstName": "Ada",
+    "contactLastName": "Lovelace",
+    "contactPhone": "+15555550123",
+    "contactEmail": "ada@example.com",
+    "demoAccountRequired": true,
+    "demoAccountName": "demo@example.com",
+    "demoAccountPassword": "secret",
+    "notes": "Use the demo account to sign in."
   }
 }
 ```
 
-See
-`plugins/asc-marketing-manager/skills/asc-marketing-manager/references/desired-json-schema.md`
-for the full schema, field limits, fallback rules, and App Review fields.
-
-## Safety Model
-
-- dry-run-first for metadata and screenshots
-- read-only pricing audit with no apply path
-- exact locale matching and locale fallback validation
-- character and UTF-8 byte limit validation
-- URL validation for support and marketing URLs
-- blank-field rejection and trailing whitespace normalization
-- redaction for credentials, JWTs, review passwords, and env contents
-- screenshot folder ambiguity checks before replace-set applies
-- pricing output treats customer prices as territory-local values with explicit currencies
+See [skills/asc-marketing-manager/references/desired-json-schema.md](/Users/ryan/Developer/Xcode/app-store-connect-skills/skills/asc-marketing-manager/references/desired-json-schema.md) for the current schema and field notes.
 
 ## Tests
 
-Run the dependency-free test suite with Node's built-in test runner:
+Run the canonical test suite:
 
 ```zsh
-node --test plugins/asc-marketing-manager/skills/asc-marketing-manager/tests/*.test.mjs plugins/asc-marketing-manager/skills/asc-pricing-manager/tests/*.test.mjs
-node --test plugins/asc-pricing-manager/skills/asc-pricing-manager/tests/*.test.mjs
+node --test skills/asc-marketing-manager/tests/*.test.mjs skills/asc-pricing-manager/tests/*.test.mjs
 ```
-
-Tests do not call App Store Connect and do not require real credentials.
-
-## Contributing
-
-Contributions are welcome where they make App Store Connect releases safer, clearer, or easier to
-review. Good areas include validation fixtures, clearer sheet extraction rules, dry-run summaries,
-editable-version edge cases, screenshot display aliases, and common release-manager workflows.

@@ -2,17 +2,17 @@
 
 ## Project
 
-`app-store-connect-skills` is a Codex marketplace source for App Store Connect skills. It currently
-ships the `asc-marketing-manager` and `asc-pricing-manager` plugins for safely syncing localized
-marketing metadata, screenshot assets, and read-only pricing audits. It also exposes top-level
-`skills/` packages so skills.sh and the `skills` CLI can discover the same workflows without
-needing to crawl Codex plugin internals.
+`app-store-connect-skills` is a `skills.sh` collection for App Store Connect workflows. It ships
+two canonical skill packages under `skills/`:
+
+- `asc-marketing-manager` for localized metadata, App Review fields, and screenshot sync
+- `asc-pricing-manager` for read-only paid-app pricing audits
 
 Current local path:
 
 `/Users/ryan/Developer/Xcode/app-store-connect-skills`
 
-Marketplace plugin layout:
+Repository layout:
 
 ```text
 app-store-connect-skills/
@@ -20,80 +20,29 @@ app-store-connect-skills/
   AGENTS.md
   LICENSE
   skills.sh.json
+  .agents/
+    skills/
+      asc-marketing-manager -> ../../skills/asc-marketing-manager
+      asc-pricing-manager -> ../../skills/asc-pricing-manager
   skills/
     asc-marketing-manager/
       SKILL.md
+      agents/
+      assets/
       lib/
+      references/
       scripts/
       tests/
-      references/
-      assets/
     asc-pricing-manager/
       SKILL.md
+      agents/
       lib/
       scripts/
       tests/
-  .agents/
-    plugins/
-      marketplace.json
-  plugins/
-    asc-marketing-manager/
-      .codex-plugin/
-        plugin.json
-      assets/
-        icon.svg
-      skills/
-        asc-marketing-manager/
-          SKILL.md
-          lib/
-            asc-sync-core.mjs
-            assets.mjs
-            cli.mjs
-            sheet-mapper.mjs
-            sync-plan.mjs
-          scripts/
-            asc-sync-assets.mjs
-            asc-sync-metadata.mjs
-          tests/
-            asc-sync-assets.test.mjs
-            asc-sync-metadata.test.mjs
-            fixtures/
-              desired-valid.json
-              app-store-version-localizations.json
-          references/
-            desired-json-schema.md
-            asset-folder-screenshots.md
-            app-store-connect-credentials.md
-            google-sheet-localizations.md
-          assets/
-            examples/
-              app.env.example
-              desired-metadata.example.json
-              localization-sheet-template.csv
-              pages-sheet-template.csv
-        asc-pricing-manager/
-          SKILL.md
-          scripts/
-            asc-audit-pricing.mjs
-          tests/
-            asc-audit-pricing.test.mjs
-    asc-pricing-manager/
-      .codex-plugin/
-        plugin.json
-      assets/
-        icon.svg
-      commands/
-        asc-pricing-manager.md
-      skills/
-        asc-pricing-manager/
-          SKILL.md
-          lib/
-            asc-sync-core.mjs
-          scripts/
-            asc-audit-pricing.mjs
-          tests/
-            asc-audit-pricing.test.mjs
 ```
+
+The root `skills/` folders are the only published source of truth. `.agents/skills/*` symlinks
+exist only so Codex can discover the same skills directly while working inside this repository.
 
 ## Current Status
 
@@ -104,16 +53,12 @@ Verification command:
 
 ```zsh
 cd /Users/ryan/Developer/Xcode/app-store-connect-skills
-node --test plugins/asc-marketing-manager/skills/asc-marketing-manager/tests/*.test.mjs plugins/asc-marketing-manager/skills/asc-pricing-manager/tests/*.test.mjs
-node --test plugins/asc-pricing-manager/skills/asc-pricing-manager/tests/*.test.mjs
 node --test skills/asc-marketing-manager/tests/*.test.mjs skills/asc-pricing-manager/tests/*.test.mjs
 ```
 
-Last known result: 49 marketplace plugin tests passed, plus 44 mirrored root-skill tests.
-
 ## Purpose
 
-The skill helps agents sync App Store Connect text metadata and screenshot assets, including:
+The skills help agents sync or audit App Store Connect data, including:
 
 - localized app name
 - localized subtitle
@@ -139,7 +84,7 @@ Future scope:
 - routing coverage files
 - rating reset
 
-App preview upload should be added as a separate command/workflow because ASC video assets have
+App preview upload should be added as a separate command or workflow because ASC video assets have
 additional validation and processing edge cases.
 
 ## Important Implementation Details
@@ -155,13 +100,16 @@ crypto.sign("sha256", Buffer.from(signingInput), {
 })
 ```
 
-This matters. A previous Ruby signing attempt returned ASC `401`; the Node `ieee-p1363` signature worked.
+This matters. A previous Ruby signing attempt returned ASC `401`; the Node `ieee-p1363` signature
+worked.
 
-The scripts only talk to App Store Connect and local files. They do not read or create Google Sheets
-directly. The skill/agent should read Google Sheets through the Google Sheets connector, then write
-transient desired-state JSON to `/private/tmp`.
+The scripts only talk to App Store Connect and local files. They do not read or create Google
+Sheets directly. The skill or agent should read Google Sheets through the Google Sheets connector,
+then write transient desired-state JSON to `/private/tmp`.
 
-If `ASC_SHEET_ID` is missing or the spreadsheet cannot be found, the skill can create a native Google Sheet first. New sheets should follow the default localization format documented in `plugins/asc-marketing-manager/skills/asc-marketing-manager/references/google-sheet-localizations.md`:
+If `ASC_SHEET_ID` is missing or the spreadsheet cannot be found, the skill can create a native
+Google Sheet first. New sheets should follow the default localization format documented in
+[skills/asc-marketing-manager/references/google-sheet-localizations.md](/Users/ryan/Developer/Xcode/app-store-connect-skills/skills/asc-marketing-manager/references/google-sheet-localizations.md):
 
 - spreadsheet title pattern: `<App Name> strings 🌎🌍🌏`
 - `Pages` tab first
@@ -191,7 +139,7 @@ ask before reading sheets or running the ASC script.
 Dry run:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --desired /private/tmp/asc-desired-metadata.json \
   --version 2.3.0 \
@@ -202,7 +150,7 @@ node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync
 Apply:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --desired /private/tmp/asc-desired-metadata.json \
   --version 2.3.0 \
@@ -215,7 +163,7 @@ Always run dry-run first. Only apply after the user explicitly asks.
 Screenshot dry run:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --assets ./AppStoreScreenshots \
   --version 2.3.0 \
@@ -225,7 +173,7 @@ node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync
 Screenshot apply:
 
 ```zsh
-node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
+node skills/asc-marketing-manager/scripts/asc-sync-assets.mjs \
   --env ~/.appstoreconnect/my-app.env \
   --assets ./AppStoreScreenshots \
   --version 2.3.0 \
@@ -238,7 +186,7 @@ after the user explicitly asks.
 Pricing audit:
 
 ```zsh
-node plugins/asc-pricing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
+node skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs \
   --env ~/.appstoreconnect/my-app-pricing.env \
   --out /private/tmp/asc-pricing-audit.json \
   --csv /private/tmp/asc-pricing-audit.csv
@@ -247,6 +195,17 @@ node plugins/asc-pricing-manager/skills/asc-pricing-manager/scripts/asc-audit-pr
 Pricing audit mode is read-only. It fetches the current app price schedule, manual prices,
 automatic prices, included territories, and app price points, then writes reviewable JSON and CSV
 artifacts. It must not schedule or apply price changes.
+
+## Codex And Claude Usage
+
+This repository does not provide plugin slash commands.
+
+- Codex users should invoke the installed skills with `/skills` or `$asc-marketing-manager` and
+  `$asc-pricing-manager`.
+- Claude users should install the skill folders as custom skills, then invoke them by name or let
+  them auto-trigger.
+
+Repo-local Codex testing should use the `.agents/skills/*` symlinks instead of copied skill trees.
 
 ## Credential Rules
 
@@ -267,8 +226,8 @@ ASC_SHEET_NAME=...
 
 Keep the target App Store version out of shared credential files. Provide it with `--version` or
 `version.versionString`; screenshot sync uses `--version`. If the user did not specify the target
-version in their prompt, ask for it. `ASC_PLATFORM` and `ASC_COPYRIGHT` are only needed when creating
-a missing version.
+version in their prompt, ask for it. `ASC_PLATFORM` and `ASC_COPYRIGHT` are only needed when
+creating a missing version.
 
 Recommended permissions:
 
@@ -279,8 +238,8 @@ chmod 600 ~/.appstoreconnect/*.p8
 ```
 
 Least privilege ASC key role for metadata and screenshots: `Marketing`. Use a separate
-pricing-capable key/env file for pricing audits; do not assume the Marketing key can read pricing
-resources.
+pricing-capable key or env file for pricing audits; do not assume the Marketing key can read
+pricing resources.
 
 ## Desired JSON Shape
 
@@ -324,12 +283,12 @@ resources.
 }
 ```
 
-The old top-level `locales` shape still works for `promotionalText` and `whatsNew`.
-Fallbacks copy source-locale fields into ASC locale variants that do not have separate sheet rows.
+The old top-level `locales` shape still works for `promotionalText` and `whatsNew`. Fallbacks copy
+source-locale fields into ASC locale variants that do not have separate sheet rows.
 
 ## Safety Behavior
 
-The script validates:
+The scripts validate:
 
 - required env values
 - key file readability
@@ -343,22 +302,11 @@ The script validates:
 - screenshot file extensions and nonempty files
 
 The metadata script normalizes trailing whitespace because ASC strips trailing whitespace on save.
-The screenshot script uses ASC reservation/upload/commit APIs, reorders uploaded screenshots, and
-polls asset delivery state until processing succeeds or fails.
+The screenshot script uses ASC reservation, upload, and commit APIs, reorders uploaded screenshots,
+and polls asset delivery state until processing succeeds or fails.
 
 ## Publishing Direction
 
-This repo is now a GitHub marketplace source for App Store Connect Codex plugins.
-
-Install path:
-
-```zsh
-codex plugin marketplace add superturboryan/app-store-connect-skills
-```
-
-The `0.1.0` release remains a beta/pre-release and should be retagged to the latest plugin-ready commit after validation.
-
-Current plugins in this collection:
-
-- `asc-marketing-manager`
-- `asc-pricing-manager`
+This repo is a `skills.sh` collection and a manual custom-skill source for Codex and Claude.
+Published installs should go through `skills.sh`. Repo-local Codex usage should rely on the
+`.agents/skills/*` symlinks rather than any generated or mirrored skill trees.

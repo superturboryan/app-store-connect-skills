@@ -1,4 +1,0 @@
-interface:
-  display_name: "ASC Pricing Manager"
-  short_description: "Audit App Store regional pricing schedules with read-only ASC API calls"
-  default_prompt: "Use $asc-pricing-manager to audit current App Store Connect regional pricing and export JSON/CSV artifacts."

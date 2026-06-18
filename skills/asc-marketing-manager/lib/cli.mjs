@@ -23,8 +23,8 @@ import {
 
 export function printHelp(logger = console) {
   logger.log(`Usage:
-  node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs --env <path> --desired <path> [--version <version>] [--ensure-version] --dry-run
-  node plugins/asc-marketing-manager/skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs --env <path> --desired <path> [--version <version>] [--ensure-version] --apply`);
+  node skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs --env <path> --desired <path> [--version <version>] [--ensure-version] --dry-run
+  node skills/asc-marketing-manager/scripts/asc-sync-metadata.mjs --env <path> --desired <path> [--version <version>] [--ensure-version] --apply`);
 }
 
 export async function runSync({
