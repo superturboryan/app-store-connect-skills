@@ -845,6 +845,7 @@ function base64Url(value) {
 
 function httpsRequest(method, url, token, body) {
   return new Promise((resolve, reject) => {
+    const timeoutMs = Number(process.env.ASC_REQUEST_TIMEOUT_MS ?? 60000);
     const request = https.request(url, {
       method,
       headers: {
@@ -866,6 +867,11 @@ function httpsRequest(method, url, token, body) {
     });
 
     request.on('error', reject);
+    if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
+      request.setTimeout(timeoutMs, () => {
+        request.destroy(new Error(`${method} ${url} timed out after ${timeoutMs}ms`));
+      });
+    }
     if (body) request.write(JSON.stringify(body));
     request.end();
   });

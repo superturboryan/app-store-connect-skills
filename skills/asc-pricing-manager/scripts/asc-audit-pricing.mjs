@@ -26,6 +26,10 @@ export function parsePricingAuditArgs(argv) {
       if (!value || value.startsWith('--')) throw new Error(`${arg} requires a value.`);
       args[arg.slice(2).replace(/-([a-z])/g, (_, char) => char.toUpperCase())] = value;
       index += 1;
+    } else if (arg === '--verbose') {
+      args.verbose = true;
+    } else if (arg === '--skip-available-price-points') {
+      args.skipAvailablePricePoints = true;
     } else if (arg === '--help' || arg === '-h') {
       args.help = true;
     } else {
@@ -61,11 +65,14 @@ export async function runPricingAudit({
   }
 
   const env = validateEnv(parseEnvFile(readFile(expandHome(args.env), 'utf8')), { checkKeyFile });
-  const request = ascRequest ?? createAscClient(env);
+  const baseRequest = ascRequest ?? createAscClient(env);
+  const request = args.verbose ? withVerboseAscRequest(baseRequest, logger) : baseRequest;
   const auditDate = args.asOf ? new Date(args.asOf) : now;
   if (Number.isNaN(auditDate.getTime())) throw new Error('--as-of must be a valid date or date-time.');
 
-  const state = await loadPricingAuditState(request, env);
+  const state = await loadPricingAuditState(request, env, {
+    skipAvailablePricePoints: args.skipAvailablePricePoints,
+  });
   const audit = buildPricingAudit(state, {
     appId: env.ASC_APP_ID,
     asOf: auditDate,
@@ -84,7 +91,7 @@ export async function runPricingAudit({
   return audit;
 }
 
-export async function loadPricingAuditState(ascRequest, env) {
+export async function loadPricingAuditState(ascRequest, env, { skipAvailablePricePoints = false } = {}) {
   const appId = encodeURIComponent(env.ASC_APP_ID);
   const scheduleResponse = await ascRequest('GET', `/apps/${appId}/appPriceSchedule`);
   const schedule = scheduleResponse.data;
@@ -95,7 +102,7 @@ export async function loadPricingAuditState(ascRequest, env) {
     ascRequest('GET', `/appPriceSchedules/${scheduleId}/baseTerritory`),
     fetchPriceRows(ascRequest, schedule.id, 'manualPrices'),
     fetchPriceRows(ascRequest, schedule.id, 'automaticPrices'),
-    fetchAvailablePricePoints(ascRequest, env.ASC_APP_ID),
+    skipAvailablePricePoints ? Promise.resolve({ data: [], included: [] }) : fetchAvailablePricePoints(ascRequest, env.ASC_APP_ID),
   ]);
 
   return {
@@ -104,6 +111,21 @@ export async function loadPricingAuditState(ascRequest, env) {
     manualPrices,
     automaticPrices,
     availablePricePoints,
+  };
+}
+
+function withVerboseAscRequest(ascRequest, logger = console) {
+  return async function verboseAscRequest(method, apiPath, body = null) {
+    const started = Date.now();
+    logger.error?.(`ASC ${method} ${apiPath}`);
+    try {
+      const response = await ascRequest(method, apiPath, body);
+      logger.error?.(`ASC ${method} ${apiPath} complete ${Date.now() - started}ms`);
+      return response;
+    } catch (error) {
+      logger.error?.(`ASC ${method} ${apiPath} failed ${Date.now() - started}ms`);
+      throw error;
+    }
   };
 }
 
@@ -411,7 +433,7 @@ function auditFileStamp(date) {
 
 function printHelp(logger = console) {
   logger.log(`Usage:
-  node plugins/asc-marketing-manager/skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs --env <path> [--out <json>] [--csv <csv>] [--as-of <date>]`);
+  node skills/asc-pricing-manager/scripts/asc-audit-pricing.mjs --env <path> [--out <json>] [--csv <csv>] [--as-of <date>] [--skip-available-price-points] [--verbose]`);
 }
 
 const currentFile = fileURLToPath(import.meta.url);
