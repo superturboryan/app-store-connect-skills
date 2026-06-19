@@ -1,7 +1,7 @@
 # App Store Connect Skills
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![skills.sh](https://img.shields.io/badge/skills.sh-App%20Store%20Connect%20Skills-000000)](https://www.skills.sh/superturboryan/app-store-connect-skills)
+[![skills.sh](https://skills.sh/b/superturboryan/app-store-connect-skills)](https://skills.sh/superturboryan/app-store-connect-skills)
 ![Node.js 18+](https://img.shields.io/badge/node-18%2B-339933)
 ![App Store Connect](https://img.shields.io/badge/App%20Store%20Connect-metadata%20%2B%20screenshots%20%2B%20pricing-0A84FF)
 
