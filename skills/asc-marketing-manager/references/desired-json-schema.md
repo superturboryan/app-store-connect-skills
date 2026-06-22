@@ -93,8 +93,8 @@ Legacy `locales` are treated as `version.locales`.
 - `promotionalText`: max 170 Unicode code points.
 - `description`: max 4000 Unicode code points.
 - `whatsNew`: max 4000 Unicode code points.
-- `keywords`: max 100 UTF-8 bytes. Count bytes, not visible characters; non-ASCII keywords can
-  exceed the limit quickly.
+- `keywords`: max 100 Unicode code points. Count characters rather than UTF-8 bytes; this matches
+  the App Store Connect editor counter and verified API behavior for non-ASCII keywords.
 - `review.notes`: max 4000 UTF-8 bytes.
 - `supportUrl` and `marketingUrl`: valid HTTPS URLs.
 

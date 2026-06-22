@@ -150,9 +150,9 @@ agent runs.
 3. Stop localization parsing at the first blank row or the `Reviewer Notes` row.
 4. Map rows with nonblank copy fields into `appInfo.locales` and `version.locales`.
 5. Map the row after `Reviewer Notes` into `review.notes` when it is nonblank.
-6. Validate local field limits before network calls, especially `Keywords`, which ASC limits to
-   100 UTF-8 bytes rather than 100 visible characters. Cyrillic, CJK, emoji, and accented text can
-   exceed the byte limit sooner than expected; trim lower-value terms and rewrite the sheet.
+6. Validate local field limits before network calls, especially `Keywords`, which ASC accepts up to
+   100 Unicode characters. Count visible Unicode code points rather than UTF-8 bytes; this matches
+   the App Store Connect editor counter and verified API behavior for non-ASCII keywords.
 7. Validate the resulting desired JSON with `parseDesiredMetadata` by running a dry run.
 
 If the user manually edits the sheet after desired JSON or a dry run was created, discard the old

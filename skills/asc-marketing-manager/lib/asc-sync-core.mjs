@@ -23,7 +23,7 @@ export const FIELD_REGISTRY = {
   versionLocalization: {
     promotionalText: { type: 'string', maxChars: 170, editableAnytime: true },
     description: { type: 'string', maxChars: 4000 },
-    keywords: { type: 'string', maxBytes: 100 },
+    keywords: { type: 'string', maxChars: 100 },
     supportUrl: { type: 'string', url: true },
     marketingUrl: { type: 'string', url: true },
     whatsNew: { type: 'string', maxChars: 4000 },
@@ -852,6 +852,7 @@ function httpsRequest(method, url, token, body) {
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
     }, (response) => {
+      response.setEncoding('utf8');
       let data = '';
       response.on('data', (chunk) => {
         data += chunk;

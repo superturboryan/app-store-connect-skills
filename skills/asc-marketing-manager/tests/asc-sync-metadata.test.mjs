@@ -236,9 +236,9 @@ test('given desired metadata that exceeds field limits or has a bad URL, when va
       then: /4001\/4000/,
     },
     {
-      name: 'keywords byte limit',
-      given: { version: { locales: { 'en-US': { keywords: 'é'.repeat(51) } } } },
-      then: /102\/100 UTF-8 bytes/,
+      name: 'keywords character limit',
+      given: { version: { locales: { 'en-US': { keywords: '音'.repeat(101) } } } },
+      then: /101\/100 characters/,
     },
     {
       name: 'URL protocol requirement',
