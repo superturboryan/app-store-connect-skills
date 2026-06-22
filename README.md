@@ -57,7 +57,8 @@ Use this skill for paid-app pricing review:
 - base territory, manual price, and automatic price audit
 - active territory-local customer price grouping by currency
 - upcoming and expired schedule row reporting
-- non-`3.99`/`0.99` outlier detection
+- generic pricing outlier detection based on active territory price-tier patterns
+- read-only pricing recommendations for markets that appear underpriced or priced above the dominant tier
 - JSON and CSV audit artifacts written to `/private/tmp` by default
 
 The pricing workflow is read-only in this release. It does not schedule or apply price changes.
@@ -82,8 +83,8 @@ Pricing audit workflow:
 
 1. Confirm the app and a pricing-capable credential env file.
 2. Run `asc-audit-pricing.mjs`.
-3. Review the generated JSON and CSV artifacts from `/private/tmp`.
-4. Design any future regional pricing matrix separately from the audit.
+3. Review the generated JSON and CSV artifacts from `/private/tmp`, including outliers and recommendations.
+4. Review suggested territory price moves before deciding on any future regional pricing matrix.
 
 The skills write transient generated JSON to `/private/tmp` and avoid committing unreleased copy or
 credentials.

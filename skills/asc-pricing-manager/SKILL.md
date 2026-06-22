@@ -1,6 +1,6 @@
 ---
 name: asc-pricing-manager
-description: Audit and plan App Store Connect app pricing schedules, regional price points, manual and automatic prices, and territory-level price bands. Use when inspecting current paid-app pricing, comparing regional App Store prices, preparing price optimization by country or region, or planning future scheduled price changes. Current workflow is read-only audit first; scheduled pricing changes require a reviewed dry run and separate explicit approval.
+description: Audit and plan App Store Connect app pricing schedules, regional price points, manual and automatic prices, outlier territories, and read-only pricing recommendations. Use when inspecting current paid-app pricing, comparing regional App Store prices, preparing price optimization by country or region, or planning future scheduled price changes. Current workflow is read-only audit first; scheduled pricing changes require a reviewed dry run and separate explicit approval.
 ---
 
 # Workflow
@@ -17,7 +17,7 @@ because pricing has a different API surface, credential role, and risk profile.
    - The script only makes `GET` requests.
    - It writes JSON and CSV artifacts to `/private/tmp` by default.
    - Use explicit `--out` and `--csv` paths when the user wants stable filenames.
-3. Review the generated summary before proposing any price changes.
+3. Review the generated summary, outliers, and recommendations before proposing any price changes.
 4. Treat all customer prices as territory-local prices with the included currency. Do not describe a
    non-USD storefront price as USD.
 
@@ -43,11 +43,14 @@ The JSON artifact includes:
 - available app price points by territory
 - active current prices by territory, preferring active manual prices over automatic prices
 - grouped current territories by `currency customerPrice`
+- a global benchmark tier derived from active territory price ladders
 - upcoming and expired schedule rows
-- active outliers outside the default `3.99` and `0.99` bands
+- active pricing outliers highlighted in the audit output
+- read-only recommendations that map each outlier market onto the benchmark territory tier, with confidence and expected proceeds delta when available
 
 The CSV artifact is a compact review table with territory, currency, source, customer price,
-proceeds, price point ID, start date, end date, active status, and band.
+proceeds, benchmark price fields, suggested action, price point ID, start date, end date, active
+status, and band.
 
 ## Safety Rules
 
