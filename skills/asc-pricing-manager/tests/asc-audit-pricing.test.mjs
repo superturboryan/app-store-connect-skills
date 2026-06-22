@@ -40,18 +40,18 @@ test('given paginated pricing resources, when running the audit, then current te
         appPrice('manual-usa-active', {
           manual: true,
           territory: 'USA',
-          pricePoint: 'pp-usa-399',
+          pricePoint: 'pp-usa-599',
         }),
         appPrice('manual-can-expired', {
           manual: true,
           territory: 'CAN',
-          pricePoint: 'pp-can-399',
+          pricePoint: 'pp-can-249',
           endDate: '2026-01-01',
         }),
       ],
       included: [
-        appPricePoint('pp-usa-399', '3.99', '2.79', 'USA'),
-        appPricePoint('pp-can-399', '3.99', '2.79', 'CAN'),
+        appPricePoint('pp-usa-599', '5.99', '4.19', 'USA'),
+        appPricePoint('pp-can-249', '2.49', '1.74', 'CAN'),
         territory('USA', 'USD'),
         territory('CAN', 'CAD'),
       ],
@@ -62,12 +62,12 @@ test('given paginated pricing resources, when running the audit, then current te
         appPrice('manual-gbr-upcoming', {
           manual: true,
           territory: 'GBR',
-          pricePoint: 'pp-gbr-499',
+          pricePoint: 'pp-gbr-549',
           startDate: '2026-12-01',
         }),
       ],
       included: [
-        appPricePoint('pp-gbr-499', '4.99', '3.49', 'GBR'),
+        appPricePoint('pp-gbr-549', '5.49', '3.84', 'GBR'),
         territory('GBR', 'GBP'),
       ],
     }),
@@ -76,25 +76,29 @@ test('given paginated pricing resources, when running the audit, then current te
         appPrice('auto-can-active', {
           manual: false,
           territory: 'CAN',
-          pricePoint: 'pp-can-099',
+          pricePoint: 'pp-can-499',
         }),
         appPrice('auto-fra-active', {
           manual: false,
           territory: 'FRA',
-          pricePoint: 'pp-fra-129',
+          pricePoint: 'pp-fra-149',
         }),
       ],
       included: [
-        appPricePoint('pp-can-099', '0.99', '0.69', 'CAN'),
-        appPricePoint('pp-fra-129', '1.29', '0.90', 'FRA'),
+        appPricePoint('pp-can-499', '4.99', '3.49', 'CAN'),
+        appPricePoint('pp-fra-149', '1.49', '1.04', 'FRA'),
         territory('CAN', 'CAD'),
         territory('FRA', 'EUR'),
       ],
     }),
     routeStarts('/apps/1234567890/appPricePoints?', {
       data: [
-        appPricePoint('pp-usa-399', '3.99', '2.79', 'USA'),
-        appPricePoint('pp-can-099', '0.99', '0.69', 'CAN'),
+        appPricePoint('pp-usa-099', '0.99', '0.69', 'USA'),
+        appPricePoint('pp-usa-299', '2.99', '2.09', 'USA'),
+        appPricePoint('pp-usa-599', '5.99', '4.19', 'USA'),
+        appPricePoint('pp-can-129', '1.29', '0.90', 'CAN'),
+        appPricePoint('pp-can-249', '2.49', '1.74', 'CAN'),
+        appPricePoint('pp-can-499', '4.99', '3.49', 'CAN'),
       ],
       included: [
         territory('USA', 'USD'),
@@ -104,7 +108,9 @@ test('given paginated pricing resources, when running the audit, then current te
     }),
     route('https://api.appstoreconnect.apple.com/v1/apps/1234567890/appPricePoints?cursor=next', {
       data: [
-        appPricePoint('pp-fra-129', '1.29', '0.90', 'FRA'),
+        appPricePoint('pp-fra-149', '1.49', '1.04', 'FRA'),
+        appPricePoint('pp-fra-299', '2.99', '2.09', 'FRA'),
+        appPricePoint('pp-fra-599', '5.99', '4.19', 'FRA'),
       ],
       included: [
         territory('FRA', 'EUR'),
@@ -137,17 +143,24 @@ test('given paginated pricing resources, when running the audit, then current te
   assert.equal(audit.summary.currentTerritories, 3);
   assert.equal(audit.summary.activeManualTerritories, 1);
   assert.equal(audit.summary.activeAutomaticTerritories, 2);
-  assert.equal(audit.summary.highBand, 1);
+  assert.equal(audit.summary.matchedBand, 2);
+  assert.equal(audit.summary.highBand, 0);
   assert.equal(audit.summary.lowBand, 1);
   assert.equal(audit.summary.outliers, 1);
+  assert.equal(audit.summary.actionableRecommendations, 1);
   assert.equal(audit.summary.upcomingRows, 1);
   assert.equal(audit.summary.expiredRows, 1);
-  assert.equal(audit.summary.availablePricePoints, 3);
+  assert.equal(audit.summary.availablePricePoints, 9);
   assert.equal(audit.currentPrices.find((row) => row.territory === 'USA').source, 'manual');
   assert.equal(audit.outliers[0].territory, 'FRA');
+  assert.equal(audit.outliers[0].band, 'low');
+  assert.equal(audit.outliers[0].benchmarkCustomerPrice, '5.99');
+  assert.equal(audit.recommendations[0].territory, 'FRA');
+  assert.equal(audit.recommendations[0].direction, 'raise');
+  assert.equal(audit.recommendations[0].recommendedCustomerPrice, '5.99');
   assert.equal(writes.get('/tmp/audit.json'), `${JSON.stringify(audit, null, 2)}\n`);
   assert.match(writes.get('/tmp/audit.csv'), /territory,currency,source,customerPrice/);
-  assert.match(writes.get('/tmp/audit.csv'), /USA,USD,manual,3\.99/);
+  assert.match(writes.get('/tmp/audit.csv'), /FRA,EUR,automatic,1\.49,1\.04,low,1\/3,5\.99,4\.19,3\/3,2,0\.6667,high,raise/);
   assert.deepEqual(madeDirs, ['/tmp', '/tmp']);
   assert.match(outputs.join('\n'), /Pricing audit complete/);
 });
@@ -169,6 +182,7 @@ test('given empty pricing resources, when building an audit, then summary counts
   assert.equal(audit.summary.currentTerritories, 0);
   assert.equal(audit.summary.rows, 0);
   assert.deepEqual(audit.groupedCurrentPrices, []);
+  assert.equal(audit.summary.actionableRecommendations, 0);
 });
 
 test('given CSV values that need escaping, when writing pricing rows to CSV, then cells are escaped', () => {
@@ -180,11 +194,18 @@ test('given CSV values that need escaping, when writing pricing rows to CSV, the
     source: 'manual',
     customerPrice: '3.99',
     proceeds: '2.79',
+    band: 'matched',
+    priceTierPosition: '2/3',
+    benchmarkCustomerPrice: '3.99',
+    benchmarkProceeds: '2.79',
+    benchmarkPriceTierPosition: '2/3',
+    deltaTiers: 0,
+    benchmarkCoverage: 0.75,
+    benchmarkConfidence: 'high',
     pricePointId: 'point"1',
     startDate: null,
     endDate: null,
     activeStatus: 'active',
-    band: 'high',
     manual: true,
   }];
 

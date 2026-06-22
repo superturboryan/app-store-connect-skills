@@ -11,9 +11,8 @@ import {
   validateEnv,
 } from '../lib/asc-sync-core.mjs';
 
-const DEFAULT_HIGH_PRICE = '3.99';
-const DEFAULT_LOW_PRICE = '0.99';
 const DEFAULT_TMP_DIR = '/private/tmp';
+const BENCHMARK_BUCKET_PRECISION = 4;
 const PRICE_ROW_RELATIONSHIPS = ['manualPrices', 'automaticPrices'];
 
 export function parsePricingAuditArgs(argv) {
@@ -76,8 +75,6 @@ export async function runPricingAudit({
   const audit = buildPricingAudit(state, {
     appId: env.ASC_APP_ID,
     asOf: auditDate,
-    highPrice: DEFAULT_HIGH_PRICE,
-    lowPrice: DEFAULT_LOW_PRICE,
   });
 
   mkdir(path.dirname(expandHome(args.out)), { recursive: true });
@@ -132,8 +129,6 @@ function withVerboseAscRequest(ascRequest, logger = console) {
 export function buildPricingAudit(state, {
   appId,
   asOf = new Date(),
-  highPrice = DEFAULT_HIGH_PRICE,
-  lowPrice = DEFAULT_LOW_PRICE,
 } = {}) {
   const included = buildIncludedMap([
     state.manualPrices,
@@ -145,20 +140,25 @@ export function buildPricingAudit(state, {
   const manualRows = normalizeAppPriceRows(state.manualPrices.data, included, {
     source: 'manual',
     asOfDate,
-    highPrice,
-    lowPrice,
   });
   const automaticRows = normalizeAppPriceRows(state.automaticPrices.data, included, {
     source: 'automatic',
     asOfDate,
-    highPrice,
-    lowPrice,
   });
   const rows = [...manualRows, ...automaticRows].sort(comparePriceRows);
   const currentPrices = selectCurrentTerritoryPrices(rows);
   const availablePricePoints = normalizeAvailablePricePoints(state.availablePricePoints.data, included);
-  const groupedCurrentPrices = groupCurrentPrices(currentPrices);
-  const outliers = currentPrices.filter((row) => row.band === 'other');
+  const ladders = buildTerritoryPriceLadders(availablePricePoints);
+  const benchmark = buildGlobalPriceBenchmark(currentPrices, ladders);
+  const annotatedCurrentPrices = annotateCurrentPrices(currentPrices, ladders, benchmark);
+  const annotatedCurrentPriceById = new Map(annotatedCurrentPrices.map((row) => [row.id, row]));
+  const annotatedRows = rows.map((row) => annotatedCurrentPriceById.get(row.id) ?? row);
+  const groupedCurrentPrices = groupCurrentPrices(annotatedCurrentPrices);
+  const outliers = annotatedCurrentPrices.filter(isPricingOutlier);
+  const recommendations = outliers
+    .map(buildPricingRecommendation)
+    .filter(Boolean)
+    .sort(comparePricingRecommendations);
   const upcomingRows = rows.filter((row) => row.activeStatus === 'upcoming');
   const expiredRows = rows.filter((row) => row.activeStatus === 'expired');
 
@@ -174,27 +174,31 @@ export function buildPricingAudit(state, {
       links: state.schedule?.links ?? {},
     },
     baseTerritory: normalizeTerritory(state.baseTerritory),
+    benchmark,
     summary: {
       rows: rows.length,
       manualRows: manualRows.length,
       automaticRows: automaticRows.length,
-      currentTerritories: currentPrices.length,
-      activeManualTerritories: currentPrices.filter((row) => row.source === 'manual').length,
-      activeAutomaticTerritories: currentPrices.filter((row) => row.source === 'automatic').length,
-      highBand: currentPrices.filter((row) => row.band === 'high').length,
-      lowBand: currentPrices.filter((row) => row.band === 'low').length,
-      otherBand: outliers.length,
+      currentTerritories: annotatedCurrentPrices.length,
+      activeManualTerritories: annotatedCurrentPrices.filter((row) => row.source === 'manual').length,
+      activeAutomaticTerritories: annotatedCurrentPrices.filter((row) => row.source === 'automatic').length,
+      matchedBand: annotatedCurrentPrices.filter((row) => row.band === 'matched').length,
+      highBand: annotatedCurrentPrices.filter((row) => row.band === 'high').length,
+      lowBand: annotatedCurrentPrices.filter((row) => row.band === 'low').length,
+      otherBand: annotatedCurrentPrices.filter((row) => row.band === 'unclassified').length,
       upcomingRows: upcomingRows.length,
       expiredRows: expiredRows.length,
       outliers: outliers.length,
+      actionableRecommendations: recommendations.length,
       availablePricePoints: availablePricePoints.length,
     },
     groupedCurrentPrices,
+    recommendations,
     outliers,
     upcomingRows,
     expiredRows,
-    currentPrices,
-    rows,
+    currentPrices: annotatedCurrentPrices,
+    rows: annotatedRows,
     availablePricePoints,
   };
 }
@@ -252,7 +256,7 @@ function buildIncludedMap(documents) {
   return map;
 }
 
-function normalizeAppPriceRows(rows, included, { source, asOfDate, highPrice, lowPrice }) {
+function normalizeAppPriceRows(rows, included, { source, asOfDate }) {
   return (rows ?? []).map((row) => {
     const pricePointId = row.relationships?.appPricePoint?.data?.id ?? null;
     const pricePoint = pricePointId ? included.get(`appPricePoints:${pricePointId}`) : null;
@@ -277,7 +281,7 @@ function normalizeAppPriceRows(rows, included, { source, asOfDate, highPrice, lo
       endDate: row.attributes?.endDate ?? null,
       activeStatus,
     };
-    normalized.band = classifyBand(normalized, { highPrice, lowPrice });
+    normalized.band = activeStatus;
     return normalized;
   });
 }
@@ -343,11 +347,191 @@ function groupCurrentPrices(currentPrices) {
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
 }
 
-function classifyBand(row, { highPrice, lowPrice }) {
-  if (row.activeStatus !== 'active') return row.activeStatus;
-  if (row.customerPrice === lowPrice) return 'low';
-  if (row.customerPrice === highPrice && (row.currency === 'USD' || row.source === 'manual')) return 'high';
-  return 'other';
+function buildTerritoryPriceLadders(availablePricePoints) {
+  const ladders = new Map();
+  for (const point of availablePricePoints) {
+    if (!point.territory) continue;
+    if (!ladders.has(point.territory)) {
+      ladders.set(point.territory, {
+        territory: point.territory,
+        currency: point.currency,
+        points: [],
+      });
+    }
+    ladders.get(point.territory).points.push(point);
+  }
+
+  for (const ladder of ladders.values()) {
+    ladder.points = ladder.points
+      .slice()
+      .sort(comparePricePoints)
+      .map((point, index, points) => ({
+        ...point,
+        tierIndex: index,
+        tierCount: points.length,
+        tierPercentile: calculateTierPercentile(index, points.length),
+      }));
+  }
+
+  return ladders;
+}
+
+function buildGlobalPriceBenchmark(currentPrices, ladders) {
+  const ladderRows = currentPrices
+    .map((row) => addTierContext(row, ladders))
+    .filter((row) => Number.isFinite(row.priceTierPercentile));
+  if (ladderRows.length < 2) {
+    return {
+      scope: 'global-ladder',
+      available: false,
+      reason: 'insufficientPriceLadderData',
+      sampleSize: ladderRows.length,
+      coverage: 0,
+      confidence: 'low',
+    };
+  }
+
+  const buckets = new Map();
+  for (const row of ladderRows) {
+    const bucketKey = roundNumber(row.priceTierPercentile, BENCHMARK_BUCKET_PRECISION).toFixed(BENCHMARK_BUCKET_PRECISION);
+    if (!buckets.has(bucketKey)) {
+      buckets.set(bucketKey, {
+        key: bucketKey,
+        percentile: roundNumber(row.priceTierPercentile, BENCHMARK_BUCKET_PRECISION),
+        count: 0,
+        territories: [],
+      });
+    }
+    const bucket = buckets.get(bucketKey);
+    bucket.count += 1;
+    bucket.territories.push(row.territory);
+  }
+
+  const rankedBuckets = [...buckets.values()].sort((a, b) => (
+    b.count - a.count
+      || b.percentile - a.percentile
+      || a.key.localeCompare(b.key)
+  ));
+  const [selected, runnerUp] = rankedBuckets;
+  const coverage = selected.count / ladderRows.length;
+
+  return {
+    scope: 'global-ladder',
+    available: true,
+    sampleSize: ladderRows.length,
+    coverage: roundNumber(coverage, 4),
+    confidence: benchmarkConfidence(coverage, selected.count, Boolean(runnerUp && runnerUp.count === selected.count)),
+    percentile: selected.percentile,
+    territories: selected.territories.sort(),
+    tieBrokenTowardHigherPrice: Boolean(runnerUp && runnerUp.count === selected.count),
+  };
+}
+
+function annotateCurrentPrices(currentPrices, ladders, benchmark) {
+  return currentPrices.map((row) => {
+    const tieredRow = addTierContext(row, ladders);
+    if (!benchmark.available || !Number.isFinite(tieredRow.priceTierPercentile) || !tieredRow.availablePricePointCount) {
+      return {
+        ...tieredRow,
+        benchmarkScope: benchmark.scope,
+        benchmarkCoverage: benchmark.coverage ?? 0,
+        benchmarkConfidence: benchmark.confidence ?? 'low',
+        benchmarkAvailable: benchmark.available,
+        benchmarkReason: benchmark.reason ?? 'insufficientPriceLadderData',
+        band: 'unclassified',
+      };
+    }
+
+    const targetIndex = percentileToTierIndex(benchmark.percentile, tieredRow.availablePricePointCount);
+    const targetPoint = ladders.get(tieredRow.territory)?.points[targetIndex] ?? null;
+    const deltaTiers = targetIndex - tieredRow.priceTierIndex;
+    const band = deltaTiers === 0 ? 'matched' : deltaTiers > 0 ? 'low' : 'high';
+
+    return {
+      ...tieredRow,
+      benchmarkScope: benchmark.scope,
+      benchmarkCoverage: benchmark.coverage,
+      benchmarkConfidence: benchmark.confidence,
+      benchmarkAvailable: benchmark.available,
+      benchmarkPercentile: benchmark.percentile,
+      benchmarkTerritories: benchmark.territories,
+      benchmarkPriceTierIndex: targetIndex,
+      benchmarkPriceTierPosition: formatTierPosition(targetIndex, tieredRow.availablePricePointCount),
+      benchmarkCustomerPrice: targetPoint?.customerPrice ?? null,
+      benchmarkProceeds: targetPoint?.proceeds ?? null,
+      benchmarkPricePointId: targetPoint?.id ?? null,
+      deltaTiers,
+      band,
+    };
+  });
+}
+
+function addTierContext(row, ladders) {
+  const ladder = ladders.get(row.territory);
+  if (!ladder || ladder.points.length === 0) {
+    return {
+      ...row,
+      priceTierIndex: null,
+      priceTierPercentile: null,
+      priceTierPosition: null,
+      availablePricePointCount: 0,
+    };
+  }
+
+  const priceTierIndex = ladder.points.findIndex((point) => (
+    point.id === row.pricePointId
+      || (point.customerPrice === row.customerPrice && point.proceeds === row.proceeds)
+  ));
+  if (priceTierIndex === -1) {
+    return {
+      ...row,
+      priceTierIndex: null,
+      priceTierPercentile: null,
+      priceTierPosition: null,
+      availablePricePointCount: ladder.points.length,
+    };
+  }
+
+  const priceTierPoint = ladder.points[priceTierIndex];
+  return {
+    ...row,
+    priceTierIndex,
+    priceTierPercentile: priceTierPoint.tierPercentile,
+    priceTierPosition: formatTierPosition(priceTierIndex, ladder.points.length),
+    availablePricePointCount: ladder.points.length,
+  };
+}
+
+function buildPricingRecommendation(row) {
+  if (!isPricingOutlier(row)) return null;
+
+  const direction = row.deltaTiers > 0 ? 'raise' : 'review-lower';
+  const estimatedProceedsDelta = numericDifference(row.benchmarkProceeds, row.proceeds);
+  return {
+    territory: row.territory,
+    currency: row.currency,
+    source: row.source,
+    direction,
+    confidence: row.benchmarkConfidence,
+    benchmarkCoverage: row.benchmarkCoverage,
+    currentCustomerPrice: row.customerPrice,
+    currentProceeds: row.proceeds,
+    currentPricePointId: row.pricePointId,
+    recommendedCustomerPrice: row.benchmarkCustomerPrice,
+    recommendedProceeds: row.benchmarkProceeds,
+    recommendedPricePointId: row.benchmarkPricePointId,
+    currentPriceTierPosition: row.priceTierPosition,
+    recommendedPriceTierPosition: row.benchmarkPriceTierPosition,
+    deltaTiers: row.deltaTiers,
+    estimatedProceedsDelta,
+    rationale: row.deltaTiers > 0
+      ? `Raise toward the dominant active price tier used in ${formatCoverage(row.benchmarkCoverage)} of benchmarked territories to improve per-unit proceeds while staying aligned with the broader market set.`
+      : `Review whether this market is intentionally priced above the dominant active price tier used in ${formatCoverage(row.benchmarkCoverage)} of benchmarked territories.`,
+  };
+}
+
+function isPricingOutlier(row) {
+  return row.band === 'low' || row.band === 'high';
 }
 
 function priceStatus(startDate, endDate, asOfDate) {
@@ -388,6 +572,11 @@ function comparePricePoints(a, b) {
     || String(a.id ?? '').localeCompare(String(b.id ?? ''));
 }
 
+function comparePricingRecommendations(a, b) {
+  return recommendationPriority(b) - recommendationPriority(a)
+    || String(a.territory ?? '').localeCompare(String(b.territory ?? ''));
+}
+
 function sourceRank(source) {
   return source === 'manual' ? 0 : 1;
 }
@@ -399,11 +588,19 @@ export function pricingRowsToCsv(rows) {
     'source',
     'customerPrice',
     'proceeds',
+    'band',
+    'priceTierPosition',
+    'benchmarkCustomerPrice',
+    'benchmarkProceeds',
+    'benchmarkPriceTierPosition',
+    'deltaTiers',
+    'benchmarkCoverage',
+    'benchmarkConfidence',
+    'suggestedAction',
     'pricePointId',
     'startDate',
     'endDate',
     'activeStatus',
-    'band',
     'manual',
     'appPriceId',
   ];
@@ -416,6 +613,11 @@ export function pricingRowsToCsv(rows) {
 
 function csvValue(row, column) {
   if (column === 'appPriceId') return row.id;
+  if (column === 'suggestedAction') {
+    if (row.band === 'low') return 'raise';
+    if (row.band === 'high') return 'review-lower';
+    return '';
+  }
   return row[column];
 }
 
@@ -429,6 +631,53 @@ function csvCell(value) {
 function auditFileStamp(date) {
   const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
   return safeDate.toISOString().replaceAll(':', '-').replaceAll('.', '-');
+}
+
+function calculateTierPercentile(index, count) {
+  if (!count) return null;
+  if (count === 1) return 1;
+  return index / (count - 1);
+}
+
+function percentileToTierIndex(percentile, count) {
+  if (!count) return null;
+  if (count === 1) return 0;
+  return Math.max(0, Math.min(count - 1, Math.round(percentile * (count - 1))));
+}
+
+function formatTierPosition(index, count) {
+  if (!Number.isInteger(index) || !count) return null;
+  return `${index + 1}/${count}`;
+}
+
+function benchmarkConfidence(coverage, count, tieBroken) {
+  if (count >= 3 && coverage >= 0.6 && !tieBroken) return 'high';
+  if (count >= 2 && coverage >= 0.5) return tieBroken ? 'medium' : 'high';
+  return 'low';
+}
+
+function roundNumber(value, decimals = 2) {
+  if (!Number.isFinite(value)) return value;
+  return Number(value.toFixed(decimals));
+}
+
+function numericDifference(nextValue, currentValue) {
+  const nextNumber = Number(nextValue);
+  const currentNumber = Number(currentValue);
+  if (!Number.isFinite(nextNumber) || !Number.isFinite(currentNumber)) return null;
+  return roundNumber(nextNumber - currentNumber, 2);
+}
+
+function formatCoverage(coverage) {
+  if (!Number.isFinite(coverage)) return '0%';
+  return `${Math.round(coverage * 100)}%`;
+}
+
+function recommendationPriority(recommendation) {
+  const coverage = Number.isFinite(recommendation.benchmarkCoverage) ? recommendation.benchmarkCoverage : 0;
+  const tierDistance = Math.abs(recommendation.deltaTiers ?? 0);
+  const directionBias = recommendation.direction === 'raise' ? 1 : 0;
+  return (coverage * 1000) + (tierDistance * 10) + directionBias;
 }
 
 function printHelp(logger = console) {

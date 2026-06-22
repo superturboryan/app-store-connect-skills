@@ -47,7 +47,7 @@ exist only so Codex can discover the same skills directly while working inside t
 ## Current Status
 
 The text metadata expansion package, screenshot asset upload package, and read-only pricing audit
-package have been implemented and tested.
+package with generic outlier detection and pricing recommendations have been implemented and tested.
 
 Verification command:
 
@@ -71,7 +71,7 @@ The skills help agents sync or audit App Store Connect data, including:
 - App Review contact, demo account, and notes text fields
 - explicit creation of a missing editable App Store version with `--ensure-version`
 - localized screenshot upload/replacement from nested folders with numeric filename ordering
-- read-only regional paid-app pricing audits with JSON/CSV output
+- read-only regional paid-app pricing audits with JSON/CSV output, generic outlier detection, and pricing recommendations
 
 Future scope:
 
