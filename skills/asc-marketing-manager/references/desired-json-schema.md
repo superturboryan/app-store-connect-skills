@@ -67,6 +67,8 @@ The ASC sync script accepts desired-state JSON with App Store Connect text metad
 - `version.usesIdfa`: optional boolean; defaults to `false` when creating a version.
 - `review`: optional App Review information. Do not commit desired JSON containing real demo passwords.
 - `fallbacks`, `appInfo.fallbacks`, and `version.fallbacks`: optional mappings from target ASC locale to a source locale.
+  Use these when one ASC locale intentionally reuses another locale's copy, for example `es-MX`
+  from `es-ES`, `pt-PT` from `pt-BR`, or `en-GB` from `en-US`.
 
 The old top-level shape remains valid for backward compatibility:
 

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 import {
+  assertNoImplicitLocaleReuseGaps,
   buildAppStoreVersionCreatePayload,
   createAscClient,
   ensureAppVersion,
@@ -65,6 +66,13 @@ export async function runSync({
   } else {
     logger.log(`ASC version ${versionString}: ${state.appVersion.id} state=${state.appVersion.attributes?.appVersionState ?? state.appVersion.attributes?.appStoreState ?? 'unknown'}`);
   }
+
+  assertNoImplicitLocaleReuseGaps({
+    appInfoLocalizations: state.appInfoLocalizations,
+    versionLocalizations: state.versionLocalizations,
+    desiredAppInfoLocales,
+    desiredVersionLocales,
+  });
 
   const plan = buildSyncPlan({
     state,

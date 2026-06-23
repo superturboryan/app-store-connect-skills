@@ -76,6 +76,31 @@ const APPLE_DEVICE_PATTERN = /\b(?:iPhone|iPad|iPod|Apple\s+(?:Watch|TV|Vision)|
 const PROMOTIONAL_TEXT_ONLY_FIELDS = new Set(Object.entries(FIELD_REGISTRY.versionLocalization)
   .filter(([, field]) => field.editableAnytime)
   .map(([name]) => name));
+const DEFAULT_LOCALE_DISPLAY_LABELS = new Map([
+  ['en-US', 'English 🇺🇸'],
+  ['en-GB', 'English (U.K.) 🇬🇧'],
+  ['nl-NL', 'Dutch 🇳🇱'],
+  ['fr-FR', 'French 🇫🇷'],
+  ['fr-CA', 'French (Canada) 🇨🇦'],
+  ['de-DE', 'German 🇩🇪'],
+  ['it', 'Italian 🇮🇹'],
+  ['ja', 'Japanese 🇯🇵'],
+  ['ko', 'Korean 🇰🇷'],
+  ['pt-BR', 'Portuguese 🇧🇷'],
+  ['pt-PT', 'Portuguese (Portugal) 🇵🇹'],
+  ['es-MX', 'Spanish (Mexico) 🇲🇽'],
+  ['es-ES', 'Spanish (Spain) 🇪🇸'],
+  ['ru', 'Russian 🇷🇺'],
+  ['sv', 'Swedish 🇸🇪'],
+  ['pl', 'Polish 🇵🇱'],
+  ['ar-SA', 'Arabic (SA) 🇸🇦'],
+  ['he', 'Hebrew 🇮🇱'],
+  ['vi', 'Vietnamese 🇻🇳'],
+  ['hi', 'Hindi 🇮🇳'],
+  ['id', 'Indonesian 🇮🇩'],
+  ['ms', 'Malay (MY) 🇲🇾'],
+  ['tr', 'Turkish 🇹🇷'],
+]);
 
 export function parseArgs(argv) {
   const args = { mode: null, ensureVersion: false };
@@ -335,6 +360,69 @@ export function expandFallbackLocales(desiredOrSection) {
   }
 
   return expanded;
+}
+
+export function findImplicitLocaleReuseGaps(existingLocalizations, desiredLocales) {
+  const desiredLocaleCodes = Object.keys(desiredLocales ?? {});
+  const desiredByLanguage = new Map();
+
+  for (const locale of desiredLocaleCodes) {
+    const language = localeLanguage(locale);
+    if (!desiredByLanguage.has(language)) desiredByLanguage.set(language, []);
+    desiredByLanguage.get(language).push(locale);
+  }
+
+  const existingLocaleCodes = [...new Set(existingLocalizations
+    .map((localization) => typeof localization === 'string' ? localization : localization?.attributes?.locale)
+    .filter(Boolean))];
+
+  return existingLocaleCodes
+    .filter((locale) => !desiredLocales?.[locale])
+    .map((locale) => ({
+      locale,
+      displayLabel: DEFAULT_LOCALE_DISPLAY_LABELS.get(locale) ?? locale,
+      sourceCandidates: desiredByLanguage.get(localeLanguage(locale)) ?? [],
+    }))
+    .filter((gap) => gap.sourceCandidates.length > 0)
+    .sort((left, right) => left.locale.localeCompare(right.locale));
+}
+
+export function assertNoImplicitLocaleReuseGaps({
+  appInfoLocalizations,
+  versionLocalizations,
+  desiredAppInfoLocales,
+  desiredVersionLocales,
+}) {
+  const sections = [
+    {
+      name: 'appInfo',
+      fallbackPath: 'appInfo.fallbacks',
+      gaps: findImplicitLocaleReuseGaps(appInfoLocalizations, desiredAppInfoLocales),
+    },
+    {
+      name: 'version',
+      fallbackPath: 'version.fallbacks',
+      gaps: findImplicitLocaleReuseGaps(versionLocalizations, desiredVersionLocales),
+    },
+  ].filter((section) => section.gaps.length > 0);
+
+  if (!sections.length) return;
+
+  const formattedSections = sections.map((section) => {
+    const rows = section.gaps.map((gap) => {
+      const fallbackExample = gap.sourceCandidates.length === 1
+        ? ` add \`${section.fallbackPath}.${gap.locale}=${gap.sourceCandidates[0]}\``
+        : ` choose one of ${gap.sourceCandidates.map((locale) => `\`${locale}\``).join(', ')} for \`${section.fallbackPath}.${gap.locale}\``;
+      return `- ${gap.locale} (${gap.displayLabel}): sheet/desired JSON omitted this locale, but ${gap.sourceCandidates.map((locale) => `\`${locale}\``).join(', ')} is present; either add a sheet row or${fallbackExample}.`;
+    });
+    return `${section.name} locale coverage gaps:\n${rows.join('\n')}`;
+  });
+
+  throw new Error([
+    'ASC locale coverage is incomplete for this sync.',
+    ...formattedSections,
+    'Resolve the gaps before syncing so shared-language locales are handled explicitly instead of being skipped silently.',
+  ].join('\n'));
 }
 
 export function normalizeAscText(value) {
@@ -841,6 +929,10 @@ export function expandHome(value) {
 
 function base64Url(value) {
   return Buffer.from(value).toString('base64url');
+}
+
+function localeLanguage(locale) {
+  return String(locale ?? '').split('-')[0];
 }
 
 function httpsRequest(method, url, token, body) {
