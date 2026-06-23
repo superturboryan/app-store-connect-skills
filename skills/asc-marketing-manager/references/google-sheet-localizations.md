@@ -153,7 +153,14 @@ agent runs.
 6. Validate local field limits before network calls, especially `Keywords`, which ASC accepts up to
    100 Unicode characters. Count visible Unicode code points rather than UTF-8 bytes; this matches
    the App Store Connect editor counter and verified API behavior for non-ASCII keywords.
-7. Validate the resulting desired JSON with `parseDesiredMetadata` by running a dry run.
+7. Compare the sheet-derived locale set against the exact ASC locales already present in App Info
+   and App Store Version localizations.
+8. If ASC already has sibling locales that share a language with a provided row, but the sheet did
+   not include them, stop and clarify before syncing. Common cases are `es-ES` plus `es-MX`,
+   `pt-BR` plus `pt-PT`, and `en-US` plus `en-GB`. Either:
+   - add explicit rows for the missing locales in the sheet, or
+   - add `appInfo.fallbacks` / `version.fallbacks` entries so reuse is intentional and visible
+9. Validate the resulting desired JSON with `parseDesiredMetadata` by running a dry run.
 
 If the user manually edits the sheet after desired JSON or a dry run was created, discard the old
 JSON, re-read the exact range from the sheet, rerun the mapper, regenerate `/private/tmp` JSON, and

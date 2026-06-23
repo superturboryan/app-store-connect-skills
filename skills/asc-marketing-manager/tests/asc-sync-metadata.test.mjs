@@ -5,6 +5,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  assertNoImplicitLocaleReuseGaps,
   applySyncPlan,
   assertEditableForChanges,
   buildAppInfoDiff,
@@ -854,6 +855,129 @@ ASC_COPYRIGHT=2026 Example
   assert.match(outputs.join('\n'), /review: CREATE/);
   assert.match(outputs.join('\n'), /appStoreVersions/);
   assert.match(outputs.join('\n'), /appStoreVersionLocalizations:en-US/);
+});
+
+test('given sibling ASC locales omitted from desired metadata, when checking locale coverage, then the sync fails with fallback guidance', () => {
+  // Given
+  const assertCoverage = () => assertNoImplicitLocaleReuseGaps({
+    appInfoLocalizations: [
+      { attributes: { locale: 'en-US' } },
+      { attributes: { locale: 'en-GB' } },
+    ],
+    versionLocalizations: [
+      { attributes: { locale: 'es-ES' } },
+      { attributes: { locale: 'es-MX' } },
+    ],
+    desiredAppInfoLocales: {
+      'en-US': { name: 'Example App', subtitle: 'Music on your watch' },
+    },
+    desiredVersionLocales: {
+      'es-ES': { promotionalText: 'Escucha desde tu reloj.' },
+    },
+  });
+
+  // When
+  let error = null;
+  try {
+    assertCoverage();
+  } catch (caught) {
+    error = caught;
+  }
+
+  // Then
+  assert.ok(error);
+  assert.match(error.message, /appInfo locale coverage gaps/);
+  assert.match(error.message, /en-GB/);
+  assert.match(error.message, /appInfo\.fallbacks\.en-GB=en-US/);
+  assert.match(error.message, /version locale coverage gaps/);
+  assert.match(error.message, /es-MX/);
+  assert.match(error.message, /version\.fallbacks\.es-MX=es-ES/);
+});
+
+test('given sibling ASC locales covered by explicit fallbacks, when running a dry run, then locale reuse validation passes', async () => {
+  // Given
+  const desired = {
+    appInfo: {
+      locales: {
+        'en-US': {
+          name: 'Example App',
+          subtitle: 'Music on your watch',
+        },
+      },
+      fallbacks: {
+        'en-GB': 'en-US',
+      },
+    },
+    version: {
+      versionString: '2.3.0',
+      locales: {
+        'es-ES': {
+          promotionalText: 'Escucha desde tu reloj.',
+          whatsNew: '+ Mejoras de rendimiento',
+        },
+      },
+      fallbacks: {
+        'es-MX': 'es-ES',
+      },
+    },
+    review: null,
+  };
+  const outputs = [];
+  const readFile = (filePath) => {
+    if (filePath === '/tmp/test.env') {
+      return `
+ASC_KEY_ID=ABCD1234EF
+ASC_ISSUER_ID=issuer-id
+ASC_KEY_PATH=/tmp/AuthKey_ABCD1234EF.p8
+ASC_APP_ID=1234567890
+ASC_PLATFORM=IOS
+`;
+    }
+    if (filePath === '/tmp/desired.json') return JSON.stringify(desired);
+    throw new Error(`Unexpected read ${filePath}`);
+  };
+  const { request } = ascRoutes([
+    matchingAscRoute('/apps/1234567890/appInfos?limit=200', {
+      data: [{ id: 'app-info-123', type: 'appInfos' }],
+    }),
+    matchingAscRoute('/appInfos/app-info-123/appInfoLocalizations?limit=200', {
+      data: [
+        { id: 'app-info-loc-en-us', attributes: { locale: 'en-US', name: 'Example App', subtitle: 'Music on your watch' } },
+        { id: 'app-info-loc-en-gb', attributes: { locale: 'en-GB', name: 'Example App', subtitle: 'Music on your watch' } },
+      ],
+    }),
+    matchingAscRoute('/apps/1234567890/appStoreVersions?limit=200', {
+      data: [
+        {
+          id: 'version-123',
+          attributes: {
+            versionString: '2.3.0',
+            platform: 'IOS',
+            appVersionState: 'PREPARE_FOR_SUBMISSION',
+          },
+        },
+      ],
+    }),
+    matchingAscRoute('/appStoreVersions/version-123/appStoreVersionLocalizations?limit=200', {
+      data: [
+        { id: 'version-loc-es-es', attributes: { locale: 'es-ES', promotionalText: 'Escucha desde tu reloj.', whatsNew: '+ Mejoras de rendimiento' } },
+        { id: 'version-loc-es-mx', attributes: { locale: 'es-MX', promotionalText: 'Escucha desde tu reloj.', whatsNew: '+ Mejoras de rendimiento' } },
+      ],
+    }),
+    matchingAscRoute('/appStoreVersions/version-123/appStoreReviewDetail', { data: null }),
+  ]);
+
+  // When
+  await runSync({
+    argv: ['--env', '/tmp/test.env', '--desired', '/tmp/desired.json', '--dry-run'],
+    readFile,
+    ascRequest: request,
+    checkKeyFile: false,
+    logger: { log: (line) => outputs.push(line) },
+  });
+
+  // Then
+  assert.match(outputs.join('\n'), /Dry-run complete/);
 });
 
 test('given apply mode with changed metadata, when running the CLI seam, then writes are applied and verified from the sync plan', async () => {

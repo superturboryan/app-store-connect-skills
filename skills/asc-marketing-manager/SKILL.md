@@ -20,6 +20,10 @@ workflow.
      `lib/sheet-mapper.mjs` to convert the 2D range into desired JSON
    - new sheets should follow the default localization layout: a `Pages` tab plus one version tab
      with headers `Name`, `Subtitle`, `Promotional Text`, `Description`, `What's new`, `Keywords`
+   - compare the sheet-derived locales against the exact ASC locales already present on the target
+     app/version before apply; if ASC has sibling locales such as `es-MX` vs `es-ES`, `pt-PT` vs
+     `pt-BR`, or `en-GB` vs `en-US` that the sheet did not cover, stop and clarify whether to add
+     explicit rows or reuse copy through `appInfo.fallbacks` / `version.fallbacks`
 3. Build a transient desired-state JSON in `/private/tmp`.
    - If the sheet is edited manually after JSON generation or after a dry-run, re-read the sheet,
      rerun the mapper, and regenerate JSON before another dry-run or apply.
@@ -33,6 +37,8 @@ workflow.
      `name`/`subtitle` fields explicitly, then retry/apply a version-locales-only JSON so
      promotional text, description, what's new, and keywords can still sync.
 4. Run the bundled script with `--dry-run`.
+   - the dry run now fails on implicit locale-reuse gaps so omitted sibling locales are handled
+     explicitly instead of being skipped silently
 5. Require explicit user confirmation before running `--apply`. If the user already gave explicit
    apply intent before the dry-run, a clean dry-run immediately before apply is sufficient.
 6. After apply, rely on the script's re-fetch verification before reporting success.
