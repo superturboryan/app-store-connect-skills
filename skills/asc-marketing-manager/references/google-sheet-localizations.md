@@ -80,6 +80,20 @@ If an app needs localized support or marketing URLs in the sheet, add optional c
 `Keywords` named exactly `supportUrl` and `marketingUrl`. They map directly to
 `version.locales[locale].supportUrl` and `version.locales[locale].marketingUrl`.
 
+Existing sheets may also use a transposed layout where row 1 starts with `Field`, language names
+run across columns, and metadata fields run down column `A`, for example:
+
+- Row 1: `Field`, `English`, `Dutch`, `French`, `German`, `Italian`, `Spanish`, `Vietnamese`,
+  `Comment`
+- Field rows: `Name`, `Subtitle`, `Promotional Text`, `iOS Description`, `iOS What's New`,
+  `iOS Keywords`, `iOS Reviewer notes`
+
+For transposed sheets, read from `A1` through the last populated language or comment column before
+mapping. Do not stop at `G` just because the first six common localizations end there; later columns
+such as `Vietnamese` must be included. The mapper treats language headers as ASC locales, maps
+`iOS ...` field rows to version metadata, skips `macOS ...` and `Android ...` rows, and stops locale
+columns at `Comment` / `Notes` columns.
+
 ## Seed Rows
 
 Use these default display labels when creating a blank localization sheet. Adjust the set to match
@@ -146,7 +160,8 @@ Use it after reading values through the Google Sheets connector so mapping stays
 agent runs.
 
 1. Read metadata first and use the exact visible version tab name.
-2. Read the bounded table range from `A1` through the last populated copy column.
+2. Read the bounded table range from `A1` through the last populated copy column. For transposed
+   sheets, this means the last populated language/comment column in row 1, not a hard-coded `G`.
 3. Stop localization parsing at the first blank row or the `Reviewer Notes` row.
 4. Map rows with nonblank copy fields into `appInfo.locales` and `version.locales`.
 5. Map the row after `Reviewer Notes` into `review.notes` when it is nonblank.

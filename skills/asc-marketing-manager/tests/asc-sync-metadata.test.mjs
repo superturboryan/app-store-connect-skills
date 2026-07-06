@@ -1252,6 +1252,35 @@ test('given display labels for new locales, when mapping rows, then app info and
   assert.equal(desired.appInfo.locales.tr.subtitle, 'SoundCloud saatinizde');
 });
 
+test('given transposed sheet rows with languages as columns, when mapping to desired JSON, then all language columns are extracted', () => {
+  // Given
+  const rows = [
+    ['Field', 'English', 'Dutch', 'Spanish', 'Vietnamese', 'Comment'],
+    ['Name', 'Example App', 'Voorbeeld App', 'App Ejemplo', 'App Vi du', 'Internal note'],
+    ['Subtitle', 'Music on your watch', 'Muziek op je watch', 'Musica en tu reloj', 'Nhac tren dong ho', 'Internal note'],
+    ['Promotional Text', 'Promo EN', 'Promo NL', 'Promo ES', 'Promo VI', 'Do not sync'],
+    ['iOS Description', 'Description EN', 'Description NL', 'Description ES', 'Description VI', 'Do not sync'],
+    ['macOS Description', 'Mac description EN', '', '', '', 'Do not sync'],
+    ['iOS What\'s New', '+ Notes EN', '+ Notes NL', '+ Notes ES', '+ Notes VI', 'Do not sync'],
+    ['iOS Keywords', 'music,watch', 'muziek,watch', 'musica,reloj', 'nhac,dongho', 'Do not sync'],
+    ['iOS Reviewer notes', 'Use the demo account.', '', '', '', 'Do not sync'],
+  ];
+
+  // When
+  const desired = desiredMetadataFromSheetRows(rows, { versionString: '2.3.0' });
+
+  // Then
+  assert.deepEqual(Object.keys(desired.version.locales).sort(), ['en-US', 'es-ES', 'nl-NL', 'vi']);
+  assert.equal(desired.version.locales.vi.promotionalText, 'Promo VI');
+  assert.equal(desired.version.locales.vi.description, 'Description VI');
+  assert.equal(desired.version.locales.vi.whatsNew, '+ Notes VI');
+  assert.equal(desired.version.locales.vi.keywords, 'nhac,dongho');
+  assert.equal(desired.appInfo.locales.vi.name, 'App Vi du');
+  assert.equal(desired.review.notes, 'Use the demo account.');
+  assert.equal(desired.version.locales['en-US'].description, 'Description EN');
+  assert.notEqual(desired.version.locales['en-US'].description, 'Mac description EN');
+});
+
 test('given a sheet row with an unknown display label, when mapping to desired JSON, then locale inference fails clearly', () => {
   // Given
   const rows = [

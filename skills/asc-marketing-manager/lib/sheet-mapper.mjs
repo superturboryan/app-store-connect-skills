@@ -72,10 +72,64 @@ export function desiredMetadataFromSheetRows(rows, { versionString = null, sheet
   if (!Array.isArray(rows) || !rows.length) throw new Error('Sheet rows must be a nonempty 2D array.');
   const headers = rows[0].map(normalizeCell);
   const hasGenericLocaleHeader = headers.some((header) => normalizeHeader(header) === 'locale');
+  const hasTransposedFieldHeader = normalizeHeader(headers[0]) === 'field';
 
-  return hasGenericLocaleHeader
-    ? desiredFromGenericRows(rows, { versionString, sheetName })
-    : desiredFromDefaultLayoutRows(rows, { versionString, sheetName });
+  if (hasGenericLocaleHeader) return desiredFromGenericRows(rows, { versionString, sheetName });
+  if (hasTransposedFieldHeader) return desiredFromTransposedRows(rows, { versionString, sheetName });
+  return desiredFromDefaultLayoutRows(rows, { versionString, sheetName });
+}
+
+function desiredFromTransposedRows(rows, { versionString, sheetName }) {
+  const desired = emptyDesired(versionString ?? sheetName);
+  const localeColumns = transposedLocaleColumns(rows[0]);
+
+  for (const row of rows.slice(1)) {
+    if (row.every((cell) => !normalizeCell(cell))) continue;
+
+    const mapping = transposedFieldMapping(row[0]);
+    if (!mapping) continue;
+
+    if (mapping.section === 'review') {
+      const value = normalizeCell(row[1]);
+      if (value) desired.review = { ...(desired.review ?? {}), [mapping.field]: value };
+      continue;
+    }
+
+    for (const { index, locale } of localeColumns) {
+      const value = normalizeCell(row[index]);
+      if (!value) continue;
+      setDesiredField(desired, mapping.section, locale, mapping.field, value);
+    }
+  }
+
+  pruneEmptySections(desired);
+  return desired;
+}
+
+function transposedLocaleColumns(headerRow) {
+  const localeColumns = [];
+
+  for (let index = 1; index < headerRow.length; index += 1) {
+    const label = normalizeCell(headerRow[index]);
+    if (!label) break;
+
+    const normalized = normalizeHeader(label);
+    if (['comment', 'comments', 'note', 'notes'].includes(normalized)) break;
+
+    localeColumns.push({ index, locale: localeFromDisplayLabel(label) });
+  }
+
+  return localeColumns;
+}
+
+function transposedFieldMapping(label) {
+  const normalized = normalizeHeader(label);
+  if (!normalized) return null;
+  if (normalized.startsWith('macos ') || normalized.startsWith('android ')) return null;
+  if (normalized === 'ios reviewer notes') return { section: 'review', field: 'notes' };
+
+  const iosField = normalized.startsWith('ios ') ? normalized.slice(4) : normalized;
+  return DEFAULT_LAYOUT_HEADER_FIELDS.get(iosField) ?? null;
 }
 
 function desiredFromDefaultLayoutRows(rows, { versionString, sheetName }) {
